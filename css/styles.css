@@ -1,0 +1,18 @@
+body {
+    background-color: #0D1117;
+    color: #FAFAFA
+}
+
+.sidebar {
+    /*height: 100%;*/
+    /*width: 150px;*/
+    /*position: absolute;*/
+    /*background-color: #252832;*/
+}
+
+
+.markdown {
+    margin-left: auto;
+    margin-right: 0;
+}
+
