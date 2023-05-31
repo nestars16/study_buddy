@@ -1,24 +1,35 @@
 "use strict";
 
-document.addEventListener("DOMContentLoaded", () => {
-        
-    let setup = async () => {
 
-    window.MathJax = {
-      tex: {
-        inlineMath: [['$', '$'], ['\\(', '\\)']]
-      },
-      svg: {
-        fontCache: 'global'
-      }
-    };
+let url = new URL('/refresh', window.location.href);
+url.protocol = url.protocol.replace('http', 'ws');
+var webSocketConnection = new WebSocket(url.href);
+
+document.addEventListener("DOMContentLoaded", () => {
     
-    (function () {
-      var script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
-      script.async = true;
-      document.head.appendChild(script);
-    })();
+
+
+    let setup_mathjax = () => {
+        window.MathJax = {
+          tex: {
+            inlineMath: [['$', '$'], ['\\(', '\\)']]
+          },
+          svg: {
+            fontCache: 'global'
+          }
+        };
+        
+        let append_mathjax_script = () => {
+          var script = document.createElement('script');
+          script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+          script.async = true;
+          document.head.appendChild(script);
+        };
+
+        append_mathjax_script();
+    }
+        
+    let setup_initial_md = async () => {
 
         let response  = await fetch("/api/md");
 
@@ -29,9 +40,9 @@ document.addEventListener("DOMContentLoaded", () => {
         let mdFilesJson = await response.json();
 
         for(const file of mdFilesJson) {
-            console.log(file);
+
             let fileSidebar = document.getElementById("file-sidebar");           
-            let liElement = document.createElement("li");
+            let liElement = document.createElement("a");
             liElement.textContent = file.name;
 
             fileSidebar.append(liElement);
@@ -43,6 +54,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     }
 
-    setup();
+    setup_mathjax();
+    setup_initial_md();
+})
 
+
+document.addEventListener("keydown", () => {
+
+    let markdown_content = document.getElementById("markdown").innerHTML;
+
+    console.log(`Sending ${markdown_content}`);
+
+    webSocketConnection.send(markdown_content);
+})
+
+
+webSocketConnection.addEventListener("message", (event) => {
+    console.log(`recieving ${event.data}`);
 })

@@ -8,6 +8,4 @@
 
 ---
 
-$\sigma 3^{4} \dfrac{\lambda}{\pi}$
-
 This equation is for huge bitches
