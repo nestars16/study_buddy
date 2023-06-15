@@ -63,6 +63,9 @@ main {
 
 /*
 .editor {
+    background : transparent;
+    font-family: 'Iosevka Web';
+    border: none;
     color : white;
     width : 100%;
     z-index : 1;
@@ -116,7 +119,7 @@ main {
   margin: 0;
   padding: 0.7rem 1.4ch;
   line-height: 1.313;
-    background : #0D1117;
-    border: none;
+  background : transparent;
+  border : none;
 }
 

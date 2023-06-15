@@ -39,6 +39,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
    let setUpMathJax = () => {
 
+        let appendMathJaxScript = () => {
+        };
+
         window.MathJax = {
           tex: {
             inlineMath: [['$', '$'], ['\\(', '\\)']],
