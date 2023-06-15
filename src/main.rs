@@ -12,7 +12,6 @@ async fn main() -> std::io::Result<()> {
         .route("/", get(get_root))
         .route("/index.js", get(get_js))
         .route("/styles.css", get(get_css))
-        .route("/file", get(get_md_files))
         .route("/refresh", get(refresh_file));
 
     let server = Server::bind(&"0.0.0.0:0".parse().unwrap()).serve(router.into_make_service());

@@ -37,10 +37,8 @@ const resizeTextarea = (textArea) => {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-   let setUpMathJax = () => {
 
-        let appendMathJaxScript = () => {
-        };
+   let setUpMathJax = () => {
 
         window.MathJax = {
           tex: {
@@ -58,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
     setUpMathJax();
     const highlightEl = document.getElementById("highlight");
     const editor = document.getElementById("editor");
-
+   let refreshMathTexCounter = 0;
 
     const initialSetup = async () => {
 
@@ -68,7 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         webSocketConnection.onmessage = (event) => {
             document.getElementById("markdown-display").innerHTML = event.data;  
-            window.MathJax.typeset();
         }
         
         webSocketConnection.onopen = (event) => {
@@ -79,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
             highlight(editor,highlightEl);
             webSocketConnection.send(editor.value);
             resizeTextarea(editor);
-            window.MathJax.typeset();
+            refreshMathTexCounter += 1;         
         }
 
         editor.onkeyup = (event) => {
@@ -109,5 +106,17 @@ document.addEventListener("DOMContentLoaded", () => {
     resizeTextarea(editor);
     highlight(editor,highlight);
     initialSetup();
+    editor.value = "";
+
+    setInterval(() => {
+
+        if(refreshMathTexCounter === 0) {
+            window.MathJax.typeset();
+        }
+
+        if(refreshMathTexCounter > 0) {
+            refreshMathTexCounter -= 1;
+        }
+    }, 150);
 
 })
