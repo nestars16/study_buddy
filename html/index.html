@@ -5,19 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Study Buddy</title>
 	<link rel="stylesheet" type="text/css" href="/styles.css" />
-
+    <link href="https://pvinis.github.io/iosevka-webfont/3.4.1/iosevka.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js" integrity="sha512-rdhY3cbXURo13l/WU9VlaRyaIYeJ/KBakckXIvJNAQde8DgpOmE+eZf7ha4vdqVjTtwQt69bD2wH2LXob/LB7Q==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/a11y-dark.min.css" integrity="sha512-Vj6gPCk8EZlqnoveEyuGyYaWZ1+jyjMPg8g4shwyyNlRQl6d3L9At02ZHQr5K6s5duZl/+YKMnM3/8pDhoUphg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="/index.js"></script>
-
 </head>
 <body>
-
-    
     <main>
-        <nav class="sidebar" id="file-sidebar"></nav>
-        <section class="markdown" id="markdown" contenteditable="true"></section>
+        <section class="editor-container">
+            <div class="line-numbers">
+                <span></span>
+            </div>
+            <div class="plain">
+              <textarea class="editor" id="editor" data-el="input"># test
+            This is a *test*
+            With a [Link](https://iamschulz.com)!</textarea>
+              <pre aria-hidden="true" class="plain__highlights"><code id="highlight" data-el="highlight" class="markdown"></code></pre>
+            </div>
+        </section>
+        <section id="markdown-display" class="markdown-display">
+        </section>
     </main>
-
-    	
-
 </body>
 </html>

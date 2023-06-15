@@ -1,36 +1,122 @@
-* {
-     box-sizing: 0;
+
+html{
+    height: 100%;
+    width: 100%;
 }
 
 body {
-    background-color: #0D1117;
-    color: #FAFAFA
+    background-color: #161B22;
+    color: #FAFAFA;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
 }
 
 main {
     display: flex;
     flex-direction: row;
-}
-
-.sidebar {
-    display: flex;
-    flex-direction: column;
-    width: 150px;
-    position: fixed;
     height: 100%;
-    text-align: center;
-    background-color: #292c2f;
-    color: #FAFAFA;
 }
 
-.sidebar a {
-    padding: 20px;    
+.editor-container {
+    height: 99%;
+    width: 45%;
+    display: inline-flex;
+    gap: 10px;
+    line-height: 21px;
+    position: relative;
+    flex : 1 0 20rem;
 }
 
 
-.markdown {
-  margin-top: 5px;
-  margin-left: 10%;
-  width: 100%;
+.editor:focus {
+    outline: none;
+}
+
+.markdown-display {
+    border-radius: 0.5%;
+    background-color: #0D1117;
+    margin-left: 1rem;
+    height: 97%;
+    width : 52%;
+    box-sizing: border-box;
+    padding-left: 10px;
+    padding-top: 0px;
+    box-sizing: border-box;
+}
+.line-numbers {
+  padding-top: 15px;
+  width: 20px;
+  font-size: 1.1rem;
+  text-align: right;
+}
+
+.line-numbers span {
+  counter-increment: linenumber;
+}
+
+.line-numbers span::before {
+  content: counter(linenumber);
+  display: block;
+  color: #506882;
+}
+
+/*
+.editor {
+    color : white;
+    width : 100%;
+    z-index : 1;
+}
+*/
+
+.plain,
+.text {
+  flex: 1 0 20rem;
+  position: relative;
+}
+
+[data-el="input"] {
+  border-width: 1px;
+  color: transparent;
+  caret-color: #FAFAFA;
+  white-space: break-spaces;
+  word-break: break-word;
+  resize: vertical;
+}
+
+[data-el="input"][data-initialized="true"] {
+  color: transparent;
+  resize: none;
+  overflow: hidden;
+}
+
+[data-el="highlight"] {
+  font-family: inherit;
+  line-height: inherit;
+  font-size: inherit;
+  margin: 0;
+  padding: 0;
+  white-space: break-spaces;
+  word-break: break-word;
+}
+
+.plain__highlights {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 90%;
+  border: 1px solid transparent;
+  pointer-events: none;
+}
+
+.editor, .plain__highlights {
+  width: 95%;
+  font-size: 1rem;
+  font-family: 'Iosevka Web';
+  margin: 0;
+  padding: 0.7rem 1.4ch;
+  line-height: 1.313;
+    background : #0D1117;
+    border: none;
 }
 

@@ -2,7 +2,6 @@ use axum::extract::{ws::{WebSocket,Message}, WebSocketUpgrade};
 use axum::response::{Html, IntoResponse, Json, Response};
 use axum::routing::get;
 use axum::{Router, Server};
-use study_buddy::{get_parsed_markdown_in_folder,parse_single_file};
 use tokio::fs::read_to_string;
 
 #[tokio::main]
@@ -13,7 +12,7 @@ async fn main() -> std::io::Result<()> {
         .route("/", get(get_root))
         .route("/index.js", get(get_js))
         .route("/styles.css", get(get_css))
-        .route("/api/md", get(get_md_files))
+        .route("/file", get(get_md_files))
         .route("/refresh", get(refresh_file));
 
     let server = Server::bind(&"0.0.0.0:0".parse().unwrap()).serve(router.into_make_service());
@@ -25,7 +24,6 @@ async fn main() -> std::io::Result<()> {
     open::that(address_string)?;
 
     server.await.unwrap();
-
 
     Ok(())
 
@@ -54,11 +52,7 @@ async fn get_css() -> Response<String> {
 }
 
 async fn get_md_files() -> impl IntoResponse {
-    let payload: Vec<_> = get_parsed_markdown_in_folder("./md_files")
-        .await
-        .unwrap_or(Vec::new());
-
-    Json(payload)
+   Json(tokio::fs::read_to_string("md_files/titles.md").await.unwrap())
 }
 
 async fn refresh_file(ws: WebSocketUpgrade) -> Response {
@@ -75,7 +69,7 @@ async fn modify_md_file_state(mut socket: WebSocket) {
         };
 
         if let Message::Text(file_state) = new_md_file_state {
-            if socket.send(Message::Text(parse_single_file(file_state))).await.is_err() {
+            if socket.send(Message::Text(study_buddy::parse_markdown_file(&file_state).await)).await.is_err() {
                 return;
             }
         }
