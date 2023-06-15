@@ -3,6 +3,7 @@ use axum::response::{Html, IntoResponse, Json, Response};
 use axum::routing::get;
 use axum::{Router, Server};
 use tokio::fs::read_to_string;
+use tower_http::services::ServeDir;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -10,9 +11,8 @@ async fn main() -> std::io::Result<()> {
     
     let router = Router::new()
         .route("/", get(get_root))
-        .route("/index.js", get(get_js))
-        .route("/styles.css", get(get_css))
-        .route("/refresh", get(refresh_file));
+        .route("/refresh", get(refresh_file))
+        .nest_service("/static", ServeDir::new("static"));
 
     let server = Server::bind(&"0.0.0.0:0".parse().unwrap()).serve(router.into_make_service());
 
@@ -30,28 +30,7 @@ async fn main() -> std::io::Result<()> {
 }
 
 async fn get_root() -> Html<String> {
-    Html(read_to_string("html/index.html").await.unwrap())
-}
-
-async fn get_static_file(path_to_file: &str, content_type: &str) -> Response<String> {
-    let markup = read_to_string(path_to_file).await.unwrap();
-
-    Response::builder()
-        .header("content-type", format!("{content_type};charset=utf8"))
-        .body(markup)
-        .unwrap()
-}
-
-async fn get_js() -> Response<String> {
-    get_static_file("js/index.js", "application/javascript").await
-}
-
-async fn get_css() -> Response<String> {
-    get_static_file("css/styles.css", "text/css").await
-}
-
-async fn get_md_files() -> impl IntoResponse {
-   Json(tokio::fs::read_to_string("md_files/titles.md").await.unwrap())
+    Html(read_to_string("static/html/index.html").await.unwrap())
 }
 
 async fn refresh_file(ws: WebSocketUpgrade) -> Response {

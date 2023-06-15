@@ -107,6 +107,7 @@ main {
   line-height: 1.313;
   background : transparent;
   border : none;
+  resize: none;
 }
 
 .action-button {
@@ -129,7 +130,16 @@ border : none;
 }
 
 .action-button:hover {
-    transition: background-color color 1s;
+    transition: background-color, color 1s ease-in-out;
     background-color: #644B7B;
     color : #EBEBEB
 }
+
+.top-navbar {
+    display : flex;
+    flex-direction: row;
+    justify-content: right;
+    padding-right: 50px;
+    transition : width, height 1s;
+}
+
