@@ -1,5 +1,5 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers} from './editorActions.js'
-import {buttonClickStyle} from './
+import {downloadMarkdownToPDF} from './api.js'
 
 "use strict";
 
@@ -24,6 +24,7 @@ const setUpMathJax = () => {
 }
 const highlightEl = document.getElementById("highlight");
 const editor = document.getElementById("editor");
+const display = document.getElementById("markdown-display");  
 let refreshMathTexCounter = 0;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -32,12 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const initialSetup = async () => {
 
-        const lineNumbers = document.querySelector(".line-numbers");
+        const downloadButton = document.getElementById("download");
 
         editor.setAttribute("data-initialized",true);
 
         webSocketConnection.onmessage = (event) => {
-            document.getElementById("markdown-display").innerHTML = event.data;  
+            display.innerHTML = event.data;
         }
 
         
@@ -55,6 +56,11 @@ document.addEventListener("DOMContentLoaded", () => {
         editor.onkeyup = updateLineNumbers;
 
         editor.onkeydown = enableTabbing; 
+
+        downloadButton.onclick = async (event) => {
+            console.log("clicked download");
+            await downloadMarkdownToPDF(display.innerHTML, "");
+        }
 
         resizeTextarea(editor);
     }

@@ -37,6 +37,10 @@ export const enableTabbing =  (event) => {
         }
 
 export const updateLineNumbers = (event) => {
+
+             
+            const lineNumbers = document.querySelector(".line-numbers");
+
             const numberOfLines = event.target.value.split('\n').length
 
             lineNumbers.innerHTML = Array(numberOfLines)

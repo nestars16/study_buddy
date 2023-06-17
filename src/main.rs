@@ -1,9 +1,12 @@
+use serde_json::Value;
+use serde::Deserialize;
 use axum::extract::{ws::{WebSocket,Message}, WebSocketUpgrade};
-use axum::response::{Html, IntoResponse, Json, Response};
-use axum::routing::get;
+use axum::response::{Html, Json, Response, IntoResponse};
+use axum::routing::{get,post};
 use axum::{Router, Server};
 use tokio::fs::read_to_string;
 use tower_http::services::ServeDir;
+
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -12,6 +15,7 @@ async fn main() -> std::io::Result<()> {
     let router = Router::new()
         .route("/", get(get_root))
         .route("/refresh", get(refresh_file))
+        .route("/download",post(download_current_markdown))
         .nest_service("/static", ServeDir::new("static"));
 
     let server = Server::bind(&"0.0.0.0:0".parse().unwrap()).serve(router.into_make_service());
@@ -25,7 +29,6 @@ async fn main() -> std::io::Result<()> {
     server.await.unwrap();
 
     Ok(())
-
 
 }
 
@@ -53,3 +56,23 @@ async fn modify_md_file_state(mut socket: WebSocket) {
         }
     }
 }
+
+#[derive(Deserialize,Debug)]
+struct PDFDownloadRequest {
+    html : String,
+    css : String,
+}
+
+async fn download_current_markdown(Json(html_json_payload): Json<PDFDownloadRequest>) -> impl IntoResponse{
+
+    println!("{:?}",html_json_payload);
+
+    let client= reqwest::Client::new();
+
+    let response  = client
+        .post("https://api.pdfendpoint.com/v1/convert");
+
+}
+
+
+
