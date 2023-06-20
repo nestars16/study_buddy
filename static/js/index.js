@@ -7,9 +7,9 @@ const url = new URL('/refresh', window.location.href);
 url.protocol = url.protocol.replace('http', 'ws');
 const webSocketConnection = new WebSocket(url.href);
 
-const script = document.createElement('script');
-script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
-document.head.appendChild(script);
+//const script = document.createElement('script');
+//script.src = 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js';
+//document.head.appendChild(script);
 
 const setUpMathJax = () => {
     window.MathJax = {
@@ -25,11 +25,12 @@ const setUpMathJax = () => {
 const highlightEl = document.getElementById("highlight");
 const editor = document.getElementById("editor");
 const display = document.getElementById("markdown-display");  
-let refreshMathTexCounter = 0;
+let refreshMathTexCounter = 10;
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    setUpMathJax();
+    //setUpMathJax();
+
 
     const initialSetup = async () => {
 
@@ -59,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         downloadButton.onclick = async (event) => {
             console.log("clicked download");
-            await downloadMarkdownToPDF(display.innerHTML, "");
+            await downloadMarkdownToPDF(display.innerHTML, "dark");
         }
 
         resizeTextarea(editor);
@@ -73,7 +74,19 @@ document.addEventListener("DOMContentLoaded", () => {
     setInterval(() => {
 
         if(refreshMathTexCounter === 0) {
-            window.MathJax.typeset();
+            renderMathInElement(document.body, {
+              // customised options
+              // • auto-render specific keys, e.g.:
+              delimiters: [
+                  {left: '$$', right: '$$', display: true},
+                  {left: '$', right: '$', display: false},
+                  {left: '\\(', right: '\\)', display: false},
+                  {left: '\\[', right: '\\]', display: true}
+              ],
+              // • rendering keys, e.g.:
+              throwOnError : false,
+              output :  "mathml",
+        });
         }
 
         if(refreshMathTexCounter > 0) {

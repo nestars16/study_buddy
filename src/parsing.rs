@@ -13,7 +13,6 @@ pub struct Entry {
 
 impl Entry {
     async fn new(path_to_read: &Path) -> Result<Self> {
-
         let name = match path_to_read.file_name() {
             Some(valid_str) => match valid_str.to_os_string().into_string() {
                 Ok(string) => string,
@@ -29,7 +28,6 @@ impl Entry {
 }
 
 pub async fn get_markdown_files(path_to_read: &str) -> Result<Vec<Entry>> {
-
     let mut fs_entries = read_dir(path_to_read).await?;
 
     let mut entries = Vec::new();
@@ -42,7 +40,5 @@ pub async fn get_markdown_files(path_to_read: &str) -> Result<Vec<Entry>> {
 }
 
 pub async fn parse_markdown_file(md_file: &str) -> String {
-
     to_html(&md_file)
-
 }

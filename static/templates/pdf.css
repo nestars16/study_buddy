@@ -1,0 +1,22 @@
+body{
+  background-color: #0D1117;
+  display:flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Iosevka Web';
+}
+
+div {
+  border: solid 0.5px;
+  padding : 0rem 1rem 1rem 1rem;
+  border-color: #30363D;
+  color : #E6EDF3;
+  border-radius: 5px;
+  text-align: left;
+}
+
+hr {
+  border:none;
+  height: 1px;
+  background-color: #30363D
+}

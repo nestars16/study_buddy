@@ -1,5 +1,5 @@
 
-export const downloadMarkdownToPDF = async (html_body, css_stylings) => {
+export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
     
     const serverResponse = await fetch("/download", {
         method : "POST",
