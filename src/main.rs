@@ -1,11 +1,10 @@
-use reqwest::header::{HeaderMap,self};
 use serde::{Deserialize,Serialize};
 use axum::{
     Router,Server,
     extract::{ws::{WebSocket,Message}, WebSocketUpgrade},
     response::{Html, Json, Response, IntoResponse},
     routing::{get,post},
-    http::{header,StatusCode}
+    body::StreamBody,
 };
 use tokio::fs::read_to_string;
 use tower_http::services::ServeDir;
@@ -107,20 +106,18 @@ async fn download_current_markdown(Json(html_json_payload): Json<PDFDownloadRequ
     }.to_string();
 
 
-    let mut html = include_str!("../static/templates/pdf.html").to_string();
-    const CONTENT_START_INDEX : usize = 377;
-    html.insert_str(CONTENT_START_INDEX, &html_json_payload.html);
-
+    let html = format!("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><link href=\"https://pvinis.github.io/iosevka-webfont/3.4.1/iosevka.css\" rel=\"stylesheet\"/><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css\" integrity=\"sha384-3UiQGuEI4TTMaFmGIZumfRPtfKQ3trwQE2JgosJxCnGmQpL/lJdjpcHkaaFwHlcI\" crossorigin=\"anonymous\"/><title>StudyBuddyDownload</title></head><body><div>{}</div></body></html>",html_json_payload.html);
+     
     let api_request = ApiRequest{html, css};
     let api_url = "https://api.pdfendpoint.com/v1/convert";
-    let mut headers = HeaderMap::new();
+    let mut headers = reqwest::header::HeaderMap::new();
     let auth_key = std::env::var("PDF_API_KEY").expect("PDF_API_KEY must be set");
     let auth_string = format!("Bearer {}", auth_key);
 
-    let auth = header::HeaderValue::from_str(&auth_string).expect("Auth key is valid ASCII");
-    let content_type = header::HeaderValue::from_static("application/json");
-    headers.insert(header::CONTENT_TYPE,content_type);
-    headers.insert(header::AUTHORIZATION,auth);
+    let auth = reqwest::header::HeaderValue::from_str(&auth_string).expect("Auth key is valid ASCII");
+    let content_type = reqwest::header::HeaderValue::from_static("application/json");
+    headers.insert(reqwest::header::CONTENT_TYPE,content_type);
+    headers.insert(reqwest::header::AUTHORIZATION,auth);
 
     //Make POST request
 
@@ -134,10 +131,22 @@ async fn download_current_markdown(Json(html_json_payload): Json<PDFDownloadRequ
 
     match api_response {
         Ok(response) => {
+           
+            let stream = response.bytes_stream();
+            let body = StreamBody::new(stream);
 
+            let headers = [
+                (axum::http::header::CONTENT_TYPE, "application/pdf"),
+                (axum::http::header::CONTENT_DISPOSITION,
+                 "attachment; filename=StudyBuddyDownload.pdf"
+                ),
+            ];
+
+            Ok((headers,body))
         }
         Err(err) => {
-           // return Err((StatusCode::NOT_FOUND, format!("File not found: {}", err)));
+            //TODO better error handling
+            return Err((axum::http::StatusCode::NOT_FOUND, format!("Error performing conversion {}", err)));
         }
     }
 

@@ -60,7 +60,7 @@ main {
 
 
 .line-numbers span::before {
-  padding-bottom: 7px;
+  padding-bottom: 5.5px;
   content: counter(linenumber);
   display: block;
   color: #506882;
