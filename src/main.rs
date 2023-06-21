@@ -75,12 +75,13 @@ async fn download_current_markdown(Json(html_json_payload): Json<PDFDownloadRequ
     struct ApiRequest {
         html : String,
         css : String,
+        js : String,
     }
 
     enum StyleType{
         Light,
         Dark,
-    };
+    }
 
     impl TryFrom<&str> for StyleType {
         type Error = String;
@@ -108,7 +109,9 @@ async fn download_current_markdown(Json(html_json_payload): Json<PDFDownloadRequ
 
     let html = format!("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><link href=\"https://pvinis.github.io/iosevka-webfont/3.4.1/iosevka.css\" rel=\"stylesheet\"/><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css\" integrity=\"sha384-3UiQGuEI4TTMaFmGIZumfRPtfKQ3trwQE2JgosJxCnGmQpL/lJdjpcHkaaFwHlcI\" crossorigin=\"anonymous\"/><title>StudyBuddyDownload</title></head><body><div>{}</div></body></html>",html_json_payload.html);
      
-    let api_request = ApiRequest{html, css};
+    let js = include_str!("../static/templates/pdf.js").to_string();
+
+    let api_request = ApiRequest{html, css, js};
     let api_url = "https://api.pdfendpoint.com/v1/convert";
     let mut headers = reqwest::header::HeaderMap::new();
     let auth_key = std::env::var("PDF_API_KEY").expect("PDF_API_KEY must be set");
