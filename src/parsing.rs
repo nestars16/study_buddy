@@ -39,6 +39,6 @@ pub async fn get_markdown_files(path_to_read: &str) -> Result<Vec<Entry>> {
     Ok(entries)
 }
 
-pub async fn parse_markdown_file(md_file: &str) -> String {
+pub fn parse_markdown_file(md_file: &str) -> String {
     to_html(&md_file)
 }

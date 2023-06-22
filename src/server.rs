@@ -1,21 +1,33 @@
+use std::sync::{Arc,Mutex};
 use crate::parse_markdown_file;
 use serde::{Deserialize,Serialize};
 use axum::{
-    extract::{ws::{WebSocket,Message}, WebSocketUpgrade},
+    extract::{ws::{WebSocket,Message}, WebSocketUpgrade, State},
     response::{Html, Json, Response, IntoResponse},
     body::StreamBody,
 };
-use tokio::fs::read_to_string;
+use tokio::{
+    fs::read_to_string,
+    sync::broadcast,
+};
+
+#[derive(Clone)]
+pub struct MarkdownState{
+    pub raw : Arc<Mutex<String>>,
+    pub rendered : Arc<Mutex<String>>,
+    pub tx : broadcast::Sender<String>,
+}
 
 pub async fn get_root() -> Html<String> {
     Html(read_to_string("static/html/index.html").await.unwrap())
 }
 
-pub async fn refresh_file(ws: WebSocketUpgrade) -> Response {
-    ws.on_upgrade(modify_md_file_state)
+pub async fn refresh_file(ws: WebSocketUpgrade, State(state): State<MarkdownState>) -> Response {
+    ws.on_upgrade(|socket| modify_md_file_state(socket, state))
 }
 
-pub async fn modify_md_file_state(mut socket: WebSocket) {
+pub async fn modify_md_file_state(mut socket: WebSocket, state : MarkdownState) {
+ 
     while let Some(new_md_file_state) = socket.recv().await {
 
         let new_md_file_state = if let Ok(file_state) = new_md_file_state {
@@ -25,7 +37,10 @@ pub async fn modify_md_file_state(mut socket: WebSocket) {
         };
 
         if let Message::Text(file_state) = new_md_file_state {
-            if socket.send(Message::Text(parse_markdown_file(&file_state).await)).await.is_err() {
+
+            *state.raw.lock().unwrap() = file_state.clone();
+
+            if socket.send(Message::Text(parse_markdown_file(&file_state))).await.is_err() {
                 return;
             }
         }
@@ -124,5 +139,4 @@ pub async fn download_current_markdown(Json(html_json_payload): Json<PDFDownload
             return Err((axum::http::StatusCode::NOT_FOUND, format!("Error performing conversion {}", err)));
         }
     }
-
 }
