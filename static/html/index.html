@@ -24,7 +24,7 @@
     <nav class="top-navbar">
         <img src="static/favicon/favicon-32x32.png"/>
         <h1>Study Buddy</h1>
-        <button id="sign-in" class="action-button user-buttons">Register</button>
+        <button id="sign-up" class="action-button user-buttons">Register</button>
         <button id="log-in" class="action-button user-buttons">Log in</button>
         <button id="download" class="action-button download-button">Download as PDF</button>
     </nav>
@@ -38,8 +38,18 @@
               <pre aria-hidden="true" class="plain__highlights"><code id="highlight" data-el="highlight" class="markdown"></code></pre>
             </div>
         </section>
+        <section class="modal hidden">
+            <button class="button-close action-button">⨉</button>
+            <h2 class="user-modal-title"></h2>
+            <form id="user-form">
+                <input type="text" placeholder="Email">
+                <input type="password" placeholder="Password">
+            </form>
+            <button class="action-button submit-button" type="submit" form="user-form">Submit</button>
+        </section>
         <section id="markdown-display" class="markdown-display">
         </section>
     </main>
+    <div class="overlay hidden"></div>
 </body>
 </html>

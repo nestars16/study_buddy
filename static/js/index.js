@@ -1,5 +1,5 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers} from './editorActions.js'
-import {downloadMarkdownToPDF} from './api.js'
+import {downloadMarkdownToPDF, open_modal, closeModal} from './api.js'
 
 "use strict";
 
@@ -19,6 +19,21 @@ document.addEventListener("DOMContentLoaded", () => {
     const initialSetup = async () => {
 
         const downloadButton = document.getElementById("download");
+        const registerButton = document.getElementById("sign-up");
+        const logInButton = document.getElementById("log-in");
+        const closeModalButton = document.querySelector(".button-close");
+
+        registerButton.onclick = (ev) => {
+            open_modal("Register",display);
+        }
+
+        logInButton.onclick = (ev) => {
+            open_modal("Log In",display);
+        }
+
+        closeModalButton.onclick = (ev) => {
+            closeModal(display);
+        }
 
         editor.setAttribute("data-initialized",true);
 
