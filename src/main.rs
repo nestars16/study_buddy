@@ -4,6 +4,7 @@ use axum::{
 };
 use std::sync::Arc;
 use tower_http::services::ServeDir;
+use study_buddy::users;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -33,6 +34,8 @@ async fn main() -> std::io::Result<()> {
             "/download",
             post(study_buddy::server::download_current_markdown),
         )
+        .route("/create_user", post(users::create_user))
+        .route("/log_in", post(users::log_in))
         .nest_service("/static", ServeDir::new("static"))
         .with_state(app_state);
 
