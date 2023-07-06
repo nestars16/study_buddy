@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const downloadButton = document.getElementById("download");
         const registerButton = document.getElementById("sign-up");
         const logInButton = document.getElementById("log-in");
-        const closeModalButton = document.querySelector(".button-close");
+        const closeModalButtons = document.querySelectorAll(".button-close");
         const submitButton = document.getElementById("submit-button");
 
         registerButton.onclick = () => {
@@ -32,8 +32,10 @@ document.addEventListener("DOMContentLoaded", () => {
             open_modal("Log In",display);
         }
 
-        closeModalButton.onclick = () => {
-            closeModal(display);
+        for (let button of closeModalButtons) {
+            button.onclick = () => {
+                closeModal(display);
+            }
         }
 
         submitButton.onclick = async () => {

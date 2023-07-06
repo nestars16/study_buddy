@@ -1,36 +1,4 @@
 
-export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
-    
-    const serverResponse = await fetch("/download", {
-        method : "POST",
-        headers : {
-            "Content-type": "application/json",
-        },
-        body : JSON.stringify({
-            html : html_body,
-            css : css_stylings,
-        })
-    });
-
-    const SUCCESS = 200;
-
-    if (serverResponse.status != SUCCESS) { 
-
-        return;                
-    }
-
-    const jsonResponse = await serverResponse.json();
-
-    console.log(jsonResponse);
-
-    const anchor_download = document.createElement('a');
-    anchor_download.href = jsonResponse.data.url;
-    anchor_download.download = jsonResponse.data.url;
-    anchor_download.target = "_blank";
-    anchor_download.click();
-}
-
-
 export const open_modal = (modal_title,display) => {  
 
     const modal = document.querySelector(".modal");
@@ -51,6 +19,7 @@ export const closeModal = (display) => {
 
     console.log("clicked close");
     const modal = document.querySelector(".modal");
+    const errorModal = document.getElementById("error-modal");
     const overlay = document.querySelector(".overlay");
     const editor = document.querySelector(".editor-container"); 
 
@@ -59,7 +28,55 @@ export const closeModal = (display) => {
 
     overlay.classList.add("hidden");
     modal.classList.add("hidden");
+    errorModal.classList.add("hidden");
 }
+
+
+export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
+    
+    const serverResponse = await fetch("/download", {
+        method : "POST",
+        headers : {
+            "Content-type": "application/json",
+        },
+        body : JSON.stringify({
+            html : html_body,
+            css : css_stylings,
+        })
+    });
+
+    const SUCCESS = 200;
+
+    if (serverResponse.status != SUCCESS) { 
+
+        const display = document.getElementById("markdown-display");  
+        const errorModal = document.getElementById("error-modal");
+        const overlay = document.querySelector(".overlay");
+        const editor = document.querySelector(".editor-container"); 
+
+        display.classList.add("hidden");
+        editor.classList.add("hidden");
+
+        overlay.classList.remove("hidden");
+        errorModal.classList.remove("hidden");
+
+        document.getElementById("error-message").textContent = 
+            `Error code : ${serverResponse.status} - ${serverResponse.type}`;
+
+        return;                
+    }
+
+    const jsonResponse = await serverResponse.json();
+
+    console.log(jsonResponse);
+
+    const anchor_download = document.createElement('a');
+    anchor_download.href = jsonResponse.data.url;
+    anchor_download.download = jsonResponse.data.url;
+    anchor_download.target = "_blank";
+    anchor_download.click();
+}
+
 
 export const sendLogIn = async (username, password) => {
     
