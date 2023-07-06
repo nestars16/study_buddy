@@ -74,9 +74,44 @@ pub struct PDFDownloadRequest {
     css: String,
 }
 
+
+#[derive(Serialize, Deserialize)]
+struct DataFields {
+    url : String
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ApiResponse {
+    success : bool,
+    data : DataFields
+}
+
+pub struct DownloadError(reqwest::Error);
+
+impl From<reqwest::Error> for DownloadError {
+    fn from(value: reqwest::Error) -> Self {
+        DownloadError(value)
+    }
+}
+
+impl IntoResponse for DownloadError{
+    fn into_response(self) -> Response {
+
+        let status_code = match self.0.status() {
+            Some(code) => code,
+            None => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
+        };
+
+        (status_code, self.0.to_string()).into_response() 
+
+    }
+}
+
+
+#[axum_macros::debug_handler]
 pub async fn download_current_markdown(
     Json(html_json_payload): Json<PDFDownloadRequest>,
-) -> impl IntoResponse {
+) -> Result<Json<ApiResponse>, DownloadError> {
     println!("{:?}", html_json_payload);
 
     #[derive(Serialize, Debug, Default)]
@@ -135,34 +170,17 @@ pub async fn download_current_markdown(
 
     let client = reqwest::Client::new();
 
+    //TODO Error handling
+
     let api_response = client
         .post(api_url)
         .headers(headers)
         .json(&api_request)
         .send()
-        .await;
+        .await?
+        .error_for_status()?
+        .json::<ApiResponse>()
+        .await?;
 
-    match api_response {
-        Ok(response) => {
-            let stream = response.bytes_stream();
-            let body = StreamBody::new(stream);
-
-            let headers = [
-                (axum::http::header::CONTENT_TYPE, "application/pdf"),
-                (
-                    axum::http::header::CONTENT_DISPOSITION,
-                    "attachment; filename=StudyBuddyDownload.pdf",
-                ),
-            ];
-
-            Ok((headers, body))
-        }
-        Err(err) => {
-            //TODO better error handling
-            return Err((
-                axum::http::StatusCode::NOT_FOUND,
-                format!("Error performing conversion {}", err),
-            ));
-        }
-    }
+    Ok(Json(api_response))
 }

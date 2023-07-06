@@ -1,5 +1,5 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers} from './editorActions.js'
-import {downloadMarkdownToPDF, open_modal, closeModal} from './api.js'
+import {downloadMarkdownToPDF, open_modal, closeModal,sendLogIn,createUser} from './api.js'
 
 "use strict";
 
@@ -22,17 +22,35 @@ document.addEventListener("DOMContentLoaded", () => {
         const registerButton = document.getElementById("sign-up");
         const logInButton = document.getElementById("log-in");
         const closeModalButton = document.querySelector(".button-close");
+        const submitButton = document.getElementById("submit-button");
 
-        registerButton.onclick = (ev) => {
+        registerButton.onclick = () => {
             open_modal("Register",display);
         }
 
-        logInButton.onclick = (ev) => {
+        logInButton.onclick = () => {
             open_modal("Log In",display);
         }
 
-        closeModalButton.onclick = (ev) => {
+        closeModalButton.onclick = () => {
             closeModal(display);
+        }
+
+        submitButton.onclick = async () => {
+
+            const modalType = document.querySelector(".user-modal_title").textContent;
+            const email = document.getElementById("email-field").textContent;
+            const password = document.getElementById("password-field").textContent;
+
+            switch(modalType){
+                case "Log In":
+                       await sendLogIn(email,password); 
+                    break;
+                case "Register":
+                        await createUser(email,password);
+                    break;
+            }
+            
         }
 
         editor.setAttribute("data-initialized",true);
@@ -41,7 +59,6 @@ document.addEventListener("DOMContentLoaded", () => {
             display.innerHTML = event.data;
             unrenderedSnapshot = event.data;
         }
-
         
         webSocketConnection.onopen = (event) => {
             webSocketConnection.send(editor.value);

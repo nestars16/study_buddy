@@ -172,7 +172,7 @@ border : none;
 }
 
 .top-navbar h1{
-    margin: 10px auto 10px 0;
+    margin: 10px auto 10px 10px;
     font-size: 1.5rem;
 }
 
@@ -251,4 +251,5 @@ border : none;
   color : #FAFAFA;
   border-radius : 100x;
 }
+
 

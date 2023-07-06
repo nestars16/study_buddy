@@ -14,6 +14,8 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
 
     const jsonResponse = await serverResponse.json();
 
+    console.log(jsonResponse);
+
     const anchor_download = document.createElement('a');
     anchor_download.href = jsonResponse.data.url;
     anchor_download.download = 'StudyBuddyDownload.pdf' ;
@@ -51,4 +53,37 @@ export const closeModal = (display) => {
 
     overlay.classList.add("hidden");
     modal.classList.add("hidden");
+}
+
+export const sendLogIn = async (username, password) => {
+    
+    const response = await fetch("/log_in", {
+        method: "POST",
+        headers : {
+            "Content-Type" : "application/json",
+        },
+        body : JSON.stringify({ email : username , password : password})
+    });
+
+
+    const jsonResponse = await response.json();
+
+    console.log(jsonResponse);
+}
+
+
+export const createUser = async (username,password) => {
+
+
+    const response = await fetch("/create_user", {
+        method: "POST",
+        headers : {
+            "Content-Type" : "application/json",
+        },
+        body : JSON.stringify({ email : username , password : password})
+    });
+
+    const jsonResponse = await response.json();
+
+    console.log(jsonResponse);
 }
