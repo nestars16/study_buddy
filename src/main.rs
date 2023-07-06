@@ -14,23 +14,6 @@ use study_buddy::users;
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
 
-    let (raw_tx, mut raw_rx): (
-        tokio::sync::broadcast::Sender<String>,
-        tokio::sync::broadcast::Receiver<String>,
-    ) = tokio::sync::broadcast::channel(100);
-
-    let (html_tx, _) = tokio::sync::broadcast::channel(100);
-
-    let app_state = Arc::new(study_buddy::server::AppState::new(raw_tx, html_tx.clone()));
-
-    tokio::task::spawn(async move {
-        loop {
-            if let Ok(raw_markdown) = raw_rx.recv().await {
-                let _ = html_tx.send(study_buddy::parse_markdown_file(&raw_markdown));
-            }
-        }
-    });
-
     let router = Router::new()
         .route("/", get(study_buddy::server::get_root))
         .route("/refresh", get(study_buddy::server::refresh_file))
@@ -40,8 +23,7 @@ async fn main() -> std::io::Result<()> {
         )
         .route("/create_user", post(users::create_user))
         .route("/log_in", post(users::log_in))
-        .nest_service("/static", ServeDir::new("static"))
-        .with_state(app_state);
+        .nest_service("/static", ServeDir::new("static"));
 
     let server = Server::bind(
         &"0.0.0.0:0"

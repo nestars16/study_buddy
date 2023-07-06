@@ -11,61 +11,30 @@ use serde::{Deserialize, Serialize};
 use std::sync::{Arc, Mutex};
 use tokio::{fs::read_to_string, sync};
 
-pub struct AppState {
-    pub raw_tx: sync::broadcast::Sender<String>,
-    pub markdown_tx: sync::broadcast::Sender<String>,
-    pub markdown: Mutex<String>,
-}
-
-impl AppState {
-    pub fn new(
-        raw_tx: sync::broadcast::Sender<String>,
-        markdown_tx: sync::broadcast::Sender<String>,
-    ) -> Self {
-        let markdown = Mutex::new(String::new());
-
-        AppState {
-            raw_tx,
-            markdown,
-            markdown_tx,
-        }
-    }
-}
 
 pub async fn get_root() -> Html<String> {
     Html(read_to_string("static/html/index.html").await.unwrap())
 }
 
-pub async fn refresh_file(ws: WebSocketUpgrade, State(state): State<Arc<AppState>>) -> Response {
-    ws.on_upgrade(|socket| modify_md_file_state(socket, state))
+pub async fn refresh_file(ws: WebSocketUpgrade) -> Response {
+    ws.on_upgrade(|socket| modify_md_file_state(socket))
 }
 
-pub async fn modify_md_file_state(socket: WebSocket, state: Arc<AppState>) {
-    let (mut sender, mut reciever) = socket.split();
+pub async fn modify_md_file_state(mut socket: WebSocket) {
+    while let Some(new_md_file_state) = socket.recv().await {
 
-    let mut rx = state.markdown_tx.subscribe();
+        let new_md_file_state = if let Ok(file_state) = new_md_file_state {
+            file_state
+        } else {
+            return;
+        };
 
-    let mut send_task = tokio::spawn(async move {
-        while let Ok(rendered) = rx.recv().await {
-            if sender.send(Message::Text(rendered)).await.is_err() {
-                break;
+        if let Message::Text(file_state) = new_md_file_state {
+            if socket.send(Message::Text(crate::parse_markdown_file(&file_state))).await.is_err() {
+                return;
             }
         }
-    });
-
-    let mut recieve_task = tokio::spawn(async move {
-        while let Some(Ok(Message::Text(raw_markdown))) = reciever.next().await {
-            let _ = state.raw_tx.send(raw_markdown.clone());
-            {
-                *state.markdown.lock().unwrap() = raw_markdown;
-            }
-        }
-    });
-
-    tokio::select! {
-           _ = (&mut send_task) => recieve_task.abort(),
-           _ = (&mut recieve_task) => send_task.abort(),
-    };
+    }
 }
 
 #[derive(Deserialize, Debug)]

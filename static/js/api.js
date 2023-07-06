@@ -12,16 +12,22 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
         })
     });
 
+    const SUCCESS = 200;
+
+    if (serverResponse.status != SUCCESS) { 
+
+        return;                
+    }
+
     const jsonResponse = await serverResponse.json();
 
     console.log(jsonResponse);
 
     const anchor_download = document.createElement('a');
     anchor_download.href = jsonResponse.data.url;
-    anchor_download.download = 'StudyBuddyDownload.pdf' ;
+    anchor_download.download = jsonResponse.data.url;
     anchor_download.target = "_blank";
     anchor_download.click();
-
 }
 
 
@@ -73,7 +79,6 @@ export const sendLogIn = async (username, password) => {
 
 
 export const createUser = async (username,password) => {
-
 
     const response = await fetch("/create_user", {
         method: "POST",
