@@ -1,12 +1,9 @@
-
 html{
     height: 100%;
     width: 100%;
 }
 
 body {
-    background-color: #161B22;
-    color: #FAFAFA;
     height: 100%;
     width: 100%;
     overflow-x: hidden;
@@ -17,6 +14,16 @@ main {
     flex-direction: row;
     height: 100%;
     z-index: 0;
+}
+
+.dark-mode-body {
+    color: #FAFAFA;
+    background-color: #161B22;
+}
+
+.light-mode-body {
+    color : black;
+    background-color: #FFFFFF;
 }
 
 .editor-container {
@@ -76,10 +83,17 @@ main {
 [data-el="input"] {
   border-width: 1px;
   color: transparent;
-  caret-color: #FAFAFA;
   white-space: break-spaces;
   word-break: break-word;
   resize: vertical;
+}
+
+.dark-mode-input {
+  caret-color: #FAFAFA;
+}
+
+.light-mode-input {
+    caret-color: black;
 }
 
 [data-el="input"][data-initialized="true"] {
@@ -123,7 +137,6 @@ font-weight: bold;
 font-family: 'Iosevka Web';
 font-size: 0.92rem;
 border-radius: 4px;
-color : #FAFAFA;
 padding: 0 1rem;
 height: 36px;
 text-decoration: none;
@@ -134,6 +147,14 @@ align-items: center;
 justify-content: center;
 transition: background 0.3s;
 border : none;
+}
+
+.dark-mode-button{
+    color : #FAFAFA;
+}
+
+.light-mode-button {
+    color : black;
 }
 
 .download-button {
@@ -252,4 +273,12 @@ border : none;
   border-radius : 100x;
 }
 
+.dark-mode-toggle {
+    background: #161B2F;
+}
+
+.light-mode-toggle {
+    background-color: white;
+    color : black;
+}
 

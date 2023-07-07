@@ -1,5 +1,5 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers} from './editorActions.js'
-import {downloadMarkdownToPDF, open_modal, closeModal,sendLogIn,createUser} from './api.js'
+import {downloadMarkdownToPDF, open_modal, closeModal,sendLogIn,createUser, toggleMode} from './api.js'
 
 "use strict";
 
@@ -7,10 +7,10 @@ const url = new URL('/refresh', window.location.href);
 url.protocol = url.protocol.replace('http', 'ws');
 const webSocketConnection = new WebSocket(url.href);
 
+let currentMode = '';
 const highlightEl = document.getElementById("highlight");
 const editor = document.getElementById("editor");
 const display = document.getElementById("markdown-display");  
-let unrenderedSnapshot = "";
 let refreshMathTexCounter = 10;
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -18,11 +18,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const initialSetup = async () => {
 
+        const toggleModesButton = document.getElementById("toggle-modes");
         const downloadButton = document.getElementById("download");
         const registerButton = document.getElementById("sign-up");
         const logInButton = document.getElementById("log-in");
         const closeModalButtons = document.querySelectorAll(".button-close");
         const submitButton = document.getElementById("submit-button");
+
+        toggleModesButton.onclick = () => {
+            currentMode = toggleMode(currentMode);
+        }
 
         registerButton.onclick = () => {
             open_modal("Register",display);
@@ -59,14 +64,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         webSocketConnection.onmessage = (event) => {
             display.innerHTML = event.data;
-            unrenderedSnapshot = event.data;
         }
         
-        webSocketConnection.onopen = (event) => {
+        webSocketConnection.onopen = () => {
             webSocketConnection.send(editor.value);
         }
 
-        editor.oninput = (event) => {
+        editor.oninput = () => {
             highlight(editor,highlightEl);
             webSocketConnection.send(editor.value);
             resizeTextarea(editor);
@@ -77,9 +81,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         editor.onkeydown = enableTabbing; 
 
-        downloadButton.onclick = async (event) => {
-
-            await downloadMarkdownToPDF(display.innerHTML, "dark");
+        downloadButton.onclick = async () => {
+            await downloadMarkdownToPDF(display.innerHTML, currentMode);
         }
 
         resizeTextarea(editor);

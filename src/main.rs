@@ -2,14 +2,17 @@ use axum::{
     routing::{get, post},
     Router, Server,
 };
-use std::sync::Arc;
 use tower_http::services::ServeDir;
 use study_buddy::users;
 
-//TODO better error messaging on front end
-//TODO possible async problem with the parsing of markdown
+//TODO Users and eventual file navigation
+//TODO dark and light mode selector for pdf export 
+//TODO vim editor settings for textarea possibly
 //TODO better button delay on frontend
 
+
+//TODO possible async problem with the parsing of markdown??
+//
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();

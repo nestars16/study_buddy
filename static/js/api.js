@@ -31,6 +31,63 @@ export const closeModal = (display) => {
     errorModal.classList.add("hidden");
 }
 
+export const toggleMode = () => {
+   
+    const body = document.querySelector("body");
+    let currentMode = '';
+
+    if (body.classList.contains("dark-mode-body")) {
+        body.classList.remove("dark-mode-body");
+        body.classList.add("light-mode-body");
+        currentMode = 'light';
+    } else {
+        body.classList.remove("light-mode-body");
+        body.classList.add("dark-mode-body");
+        currentMode = 'dark';
+    }
+
+    const buttons = document.querySelectorAll(".action-button");
+
+    for(let button of buttons) {
+
+        if (button.classList.contains("dark-mode-button")) {
+            button.classList.remove("dark-mode-button");
+            button.classList.add("light-mode-button");
+        } else {
+            button.classList.remove("light-mode-button");
+            button.classList.add("dark-mode-button");
+        }
+    }
+
+    const editor = document.getElementById("editor");
+
+    if(editor.classList.contains("dark-mode-input")) {
+        editor.classList.remove("dark-mode-input");
+        editor.classList.add("light-mode-input");
+    }else {
+        editor.classList.remove("light-mode-input");
+        editor.classList.add("dark-mode-input");
+    }
+
+    const toggleButton = document.getElementById("toggle-modes");
+
+    const moonIcon = document.getElementById("moon");
+    const sunIcon = document.getElementById("sun");
+
+    if(toggleButton.classList.contains("dark-mode-toggle")) {
+        toggleButton.classList.remove("dark-mode-toggle");
+        toggleButton.classList.add("light-mode-toggle");
+        moonIcon.classList.add("hidden");
+        sunIcon.classList.remove("hidden");
+    }else {
+        toggleButton.classList.remove("light-mode-toggle");
+        toggleButton.classList.add("dark-mode-toggle");
+        sunIcon.classList.add("hidden");
+        moonIcon.classList.remove("hidden");
+    }
+
+    return currentMode;
+}
 
 export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
     
