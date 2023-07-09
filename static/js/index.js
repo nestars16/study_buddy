@@ -1,5 +1,5 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers} from './editorActions.js'
-import {downloadMarkdownToPDF, open_modal, closeModal,sendLogIn,createUser, toggleMode} from './api.js'
+import {downloadMarkdownToPDF, open_modal, closeModal,sendLogIn,createUser, toggleMode, sumbitButtonAction} from './api.js'
 
 "use strict";
 
@@ -15,7 +15,6 @@ let refreshMathTexCounter = 10;
 
 document.addEventListener("DOMContentLoaded", () => {
 
-
     const initialSetup = async () => {
 
         const toggleModesButton = document.getElementById("toggle-modes");
@@ -23,7 +22,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const registerButton = document.getElementById("sign-up");
         const logInButton = document.getElementById("log-in");
         const closeModalButtons = document.querySelectorAll(".button-close");
-        const submitButton = document.getElementById("submit-button");
 
         toggleModesButton.onclick = () => {
             currentMode = toggleMode(currentMode);
@@ -43,22 +41,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        submitButton.onclick = async () => {
-
-            const modalType = document.querySelector(".user-modal_title").textContent;
-            const email = document.getElementById("email-field").textContent;
-            const password = document.getElementById("password-field").textContent;
-
-            switch(modalType){
-                case "Log In":
-                       await sendLogIn(email,password); 
-                    break;
-                case "Register":
-                        await createUser(email,password);
-                    break;
-            }
-            
-        }
 
         editor.setAttribute("data-initialized",true);
 

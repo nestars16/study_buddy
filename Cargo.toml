@@ -6,12 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-axum = { version = "0.6.18", features = ["json","ws"] }
+axum = { version = "0.6.18", features = ["json", "ws", "multipart"] }
 axum-macros = "0.3.7"
+axum_typed_multipart = "0.5.0"
 dotenv = "0.15.0"
 futures = "0.3.28"
 markdown = "1.0.0-alpha.9"
 open = "4.1.0"
+postgrest = "1.5.1"
 reqwest = { version = "0.11.18", features = ["json", "stream"] }
 serde = { version = "1.0.163", features = ["derive"] }
 serde_json = "1.0.96"

@@ -58,11 +58,11 @@
         <section class="modal hidden">
             <button class="button-close action-button dark-mode-button">⨉</button>
             <h2 class="user-modal-title"></h2>
-            <form id="user-form">
-                <input id="email-field" type="text" placeholder="Email">
-                <input id="password-field"type="password" placeholder="Password">
+            <form id="user-form" method="post" enctype="multipart/form-data">
+                <input name="email" id="email-field"   type="text" placeholder="Email" form="user-form">
+                <input name="password" id="password-field"type="password" placeholder="Password" form="user-form">
+                <input id="submit-button"type="submit" class="action-button submit-button dark-mode-button" type="submit" form="user-form" value="Submit">
             </form>
-            <button id="submit-button" class="action-button submit-button" type="submit" form="user-form">Submit</button>
         </section>
         <section id="error-modal" class="modal hidden">
             <button class="button-close action-button">⨉</button>

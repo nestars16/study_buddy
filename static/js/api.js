@@ -1,5 +1,5 @@
 
-export const open_modal = (modal_title,display) => {  
+export const open_modal = (modalTitle,display) => {  
 
     const modal = document.querySelector(".modal");
     const overlay = document.querySelector(".overlay");
@@ -9,7 +9,17 @@ export const open_modal = (modal_title,display) => {
     display.classList.add("hidden");
     editor.classList.add("hidden");
 
-    modal_h2.textContent = modal_title;
+    modal_h2.textContent = modalTitle;
+    const userForm = document.getElementById("user-form");
+
+    switch(modalTitle) {
+        case 'Log In':
+                userForm.action = '/log_in';
+            break;
+        case 'Register':
+                userForm.action = '/create_user';
+            break;
+    }
 
     overlay.classList.remove("hidden");
     modal.classList.remove("hidden");
@@ -165,4 +175,24 @@ export const createUser = async (username,password) => {
     const jsonResponse = await response.json();
 
     console.log(jsonResponse);
+}
+
+export const sumbitButtonAction = async () => {
+
+            console.log("Submit action");
+
+            //const modalType = document.querySelector(".user-modal-title").textContent;
+            //const email = document.getElementById("email-field").textContent;
+            //const password = document.getElementById("password-field").textContent;
+
+            //debugger;
+
+            //switch(modalType){
+            //    case "Log In":
+            //           await sendLogIn(email,password); 
+            //        break;
+            //    case "Register":
+            //            await createUser(email,password);
+            //        break;
+            //}
 }
