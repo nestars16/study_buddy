@@ -55,15 +55,15 @@ pub struct ApiResponse {
     data : DataFields
 }
 
-pub struct DownloadError(reqwest::Error);
+pub struct ReqwestWrapper(reqwest::Error);
 
-impl From<reqwest::Error> for DownloadError {
+impl From<reqwest::Error> for ReqwestWrapper {
     fn from(value: reqwest::Error) -> Self {
-        DownloadError(value)
+        ReqwestWrapper(value)
     }
 }
 
-impl IntoResponse for DownloadError{
+impl IntoResponse for ReqwestWrapper{
     fn into_response(self) -> Response {
 
         let status_code = match self.0.status() {
@@ -80,7 +80,7 @@ impl IntoResponse for DownloadError{
 #[axum_macros::debug_handler]
 pub async fn download_current_markdown(
     Json(html_json_payload): Json<PDFDownloadRequest>,
-) -> Result<Json<ApiResponse>, DownloadError> {
+) -> Result<Json<ApiResponse>, ReqwestWrapper> {
     println!("{:?}", html_json_payload);
 
     #[derive(Serialize, Debug, Default)]

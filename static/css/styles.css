@@ -211,7 +211,7 @@ border : none;
   text-align: left;
   z-index: 3;
 }
-.modal input[type="text"], input[type="password"] {
+.modal input[type="email"], input[type="password"] {
   font-family: 'Iosevka Web';
   padding : 7px;
   outline:none;

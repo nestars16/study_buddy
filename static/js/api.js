@@ -179,20 +179,17 @@ export const createUser = async (username,password) => {
 
 export const sumbitButtonAction = async () => {
 
-            console.log("Submit action");
+            const modalType = document.querySelector(".user-modal-title").textContent;
+            const email = document.getElementById("email-field").textContent;
+            const password = document.getElementById("password-field").textContent;
 
-            //const modalType = document.querySelector(".user-modal-title").textContent;
-            //const email = document.getElementById("email-field").textContent;
-            //const password = document.getElementById("password-field").textContent;
 
-            //debugger;
-
-            //switch(modalType){
-            //    case "Log In":
-            //           await sendLogIn(email,password); 
-            //        break;
-            //    case "Register":
-            //            await createUser(email,password);
-            //        break;
-            //}
+            switch(modalType){
+                case "Log In":
+                       await sendLogIn(email,password); 
+                    break;
+                case "Register":
+                        await createUser(email,password);
+                    break;
+            }
 }

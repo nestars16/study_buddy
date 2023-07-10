@@ -58,9 +58,9 @@
         <section class="modal hidden">
             <button class="button-close action-button dark-mode-button">⨉</button>
             <h2 class="user-modal-title"></h2>
-            <form id="user-form" method="post" enctype="multipart/form-data">
-                <input name="email" id="email-field"   type="text" placeholder="Email" form="user-form">
-                <input name="password" id="password-field"type="password" placeholder="Password" form="user-form">
+            <form id="user-form" onsubmit="sumbitButtonAction();return false">
+                <input name="email" id="email-field"   type="email" placeholder="Email" form="user-form" required>
+                <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" required>
                 <input id="submit-button"type="submit" class="action-button submit-button dark-mode-button" type="submit" form="user-form" value="Submit">
             </form>
         </section>

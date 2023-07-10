@@ -1,5 +1,5 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers} from './editorActions.js'
-import {downloadMarkdownToPDF, open_modal, closeModal,sendLogIn,createUser, toggleMode, sumbitButtonAction} from './api.js'
+import {downloadMarkdownToPDF, open_modal, closeModal, toggleMode, sumbitButtonAction} from './api.js'
 
 "use strict";
 
@@ -22,6 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
         const registerButton = document.getElementById("sign-up");
         const logInButton = document.getElementById("log-in");
         const closeModalButtons = document.querySelectorAll(".button-close");
+        const submitForm = document.getElementById("user-form");
+
+        submitForm.onsubmit = (event) => {
+            event.preventDefault();
+            sumbitButtonAction();
+        };
 
         toggleModesButton.onclick = () => {
             currentMode = toggleMode(currentMode);
