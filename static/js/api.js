@@ -145,7 +145,9 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
 
 
 export const sendLogIn = async (username, password) => {
-    
+
+    const modalError = document.getElementById("modal-error");  
+
     const response = await fetch("/log_in", {
         method: "POST",
         headers : {
@@ -154,17 +156,21 @@ export const sendLogIn = async (username, password) => {
         body : JSON.stringify({ email : username , password : password})
     });
 
-    
 
-    const responseText = await response.text();
+    if (response.status != 200) {
 
-    console.log(responseText);
+        const responseText = await response.text();
+
+        modalError.textContent = responseText;
+    } else {
+        console.log("Logged in");
+    }
+
 }
 
 
 export const createUser = async (username,password,confirmPassword) => {
 
-    const modalError = document.getElementById("modal-error");  
 
     if(password !== confirmPassword) {
         modalError.textContent = "Passwords dont match";     
@@ -196,7 +202,8 @@ export const sumbitButtonAction = async () => {
             const email = document.getElementById("email-field").value;
             const password = document.getElementById("password-field").value;
             const confirmPassword =  document.getElementById("password-confirmation-field").value;
-            
+
+            console.log(modalType);
 
             switch(modalType){
                 case "Log In":
@@ -206,4 +213,5 @@ export const sumbitButtonAction = async () => {
                         await createUser(email,password,confirmPassword);
                     break;
             }
+
 }

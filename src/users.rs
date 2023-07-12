@@ -34,16 +34,22 @@ impl From<User> for String {
 }
 
 
-pub enum UserCreationResponseError {
+pub enum UserCreationError {
     EmailAlreadyInUse
 }
 
-pub enum UserCreationResponse {
-    Success,
-    Fail(UserCreationResponseError)
+pub enum UserLogInError {
+    NoMatchingRecord,
+    IncorrectPasswordOrEmail,
 }
 
-impl IntoResponse for UserCreationResponse {
+pub enum UserRequestResponse<ErrorT>{
+    Success,
+    Fail(ErrorT)
+}
+
+
+impl IntoResponse for UserRequestResponse<UserCreationError>{
     fn into_response(self) -> axum::response::Response {
 
         use axum::http::StatusCode;
@@ -53,19 +59,40 @@ impl IntoResponse for UserCreationResponse {
             Self::Fail(error) => {
                 
                 let error_message = match error {
-                    UserCreationResponseError::EmailAlreadyInUse => "This email is already in use"
+                    UserCreationError::EmailAlreadyInUse => "This email is already in use"
                 };
 
                 (StatusCode::INTERNAL_SERVER_ERROR,error_message).into_response()
             }
         }
+    }
+}
 
+impl IntoResponse for UserRequestResponse<UserLogInError> {
+
+    fn into_response(self) -> axum::response::Response {
+
+        use axum::http::StatusCode;
+
+        match self {
+            Self::Success => (StatusCode::OK, "Logged in User").into_response(),
+            Self::Fail(error) => {
+                
+                let error_message = match error {
+                    UserLogInError::NoMatchingRecord => "No matching user with provided email",
+                    UserLogInError::IncorrectPasswordOrEmail => "Incorrect Password or Email",
+                };
+
+                (StatusCode::INTERNAL_SERVER_ERROR,error_message).into_response()
+            }
+        }
     }
 }
 
 
+//TODO add button delay on frontend
 #[axum_macros::debug_handler]
-pub async fn create_user(Json(user_payload): Json<SentUser>) -> Result<UserCreationResponse, crate::ReqwestWrapper> {
+pub async fn create_user(Json(user_payload): Json<SentUser>) -> Result<UserRequestResponse<UserCreationError>, crate::ReqwestWrapper> {
 
     let client = 
         Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
@@ -85,21 +112,47 @@ pub async fn create_user(Json(user_payload): Json<SentUser>) -> Result<UserCreat
 
         let new_user = User::new(user_payload.email, user_payload.password);
 
-        dbg!(client
+        client
         .from("users")
         .insert(new_user)
         .execute()
         .await?
-        .error_for_status()?
-        );
+        .error_for_status()?;
 
-        Ok(UserCreationResponse::Success)
+        Ok(UserRequestResponse::Success)
 
     } else {
-        Ok(UserCreationResponse::Fail(UserCreationResponseError::EmailAlreadyInUse))
+        Ok(UserRequestResponse::Fail(UserCreationError::EmailAlreadyInUse))
     }
 
 }
 
-pub async fn log_in(Json(user_payload) : Json<SentUser>) -> impl IntoResponse {
+pub async fn log_in(Json(user_payload) : Json<SentUser>) -> Result<UserRequestResponse<UserLogInError>, crate::ReqwestWrapper>{
+
+    let client = 
+        Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
+        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+
+    let users_with_this_email : Vec<User> = 
+        client
+        .from("users")
+        .eq("email", user_payload.email)
+        .execute()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?;
+
+    if let Some(user_with_email) = users_with_this_email.first() {
+        //                                                 Yes i feel bad 
+        if verify(user_payload.password, &user_with_email.password).unwrap() {
+            Ok(UserRequestResponse::Success)
+        } else {
+            Ok(UserRequestResponse::Fail(UserLogInError::IncorrectPasswordOrEmail))
+        }
+
+    } else {
+        Ok(UserRequestResponse::Fail(UserLogInError::NoMatchingRecord))
+    }
+
 }

@@ -23,11 +23,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const logInButton = document.getElementById("log-in");
         const closeModalButtons = document.querySelectorAll(".button-close");
         const submitForm = document.getElementById("user-form");
+        const submitButton  = document.getElementById("submit-button");
 
-        submitForm.onsubmit = (event) => {
+        submitForm.onsubmit = async (event) => {
             event.preventDefault();
-            sumbitButtonAction();
+            await sumbitButtonAction();
         };
+
+        submitButton.onclick = async (event) => {
+            event.preventDefault();
+            await sumbitButtonAction();
+        }
 
         toggleModesButton.onclick = () => {
             currentMode = toggleMode(currentMode);
