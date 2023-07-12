@@ -4,54 +4,68 @@ use axum::{
     response::IntoResponse
 };
 
-use axum_typed_multipart::
-{TryFromMultipart,
-TypedMultipart
-};
 use serde::{Serialize,Deserialize};
+use bcrypt::{DEFAULT_COST, hash, verify};
 
-#[derive(Serialize, TryFromMultipart)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct SentUser {
     email : String,
     password: String,
 }
 
-#[derive(Deserialize,Debug)]
+#[derive(Serialize, Deserialize,Debug)]
 pub struct User {
     id : uuid::Uuid,
     email: String,
     password : String,
 }
 
-pub struct UserCreationResponse {
-    success : bool,
-    reason : Option<String>,
+impl User {
+    fn new(email : String, password:  String) -> Self {
+        let password = hash(password, DEFAULT_COST).expect("All passwords should hash");
+        User{id : uuid::Uuid::new_v4(),email,password}
+    }
+}
+
+impl From<User> for String {
+    fn from(value: User) -> Self {
+        dbg!(serde_json::to_string(&value).expect("Type is serializable"))
+    }
 }
 
 
-impl UserCreationResponse {
+pub enum UserCreationResponseError {
+    EmailAlreadyInUse
+}
 
+pub enum UserCreationResponse {
+    Success,
+    Fail(UserCreationResponseError)
 }
 
 impl IntoResponse for UserCreationResponse {
     fn into_response(self) -> axum::response::Response {
 
-        let status_code = match self.success {
-            false => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-            true => axum::http::StatusCode::OK
-        };
+        use axum::http::StatusCode;
 
-        let reason = match self.reason {
-            Some(reason) => reason,
-            None => "Request sucessful".to_string()
-        };
+        match self {
+            Self::Success => (StatusCode::CREATED, "Created_user").into_response(),
+            Self::Fail(error) => {
+                
+                let error_message = match error {
+                    UserCreationResponseError::EmailAlreadyInUse => "This email is already in use"
+                };
 
-        (status_code,reason).into_response()
+                (StatusCode::INTERNAL_SERVER_ERROR,error_message).into_response()
+            }
+        }
+
     }
 }
 
+
 #[axum_macros::debug_handler]
-pub async fn create_user(TypedMultipart(SentUser{ email, password }): TypedMultipart<SentUser>) -> Result<UserCreationResponse, crate::ReqwestWrapper> {
+pub async fn create_user(Json(user_payload): Json<SentUser>) -> Result<UserCreationResponse, crate::ReqwestWrapper> {
 
     let client = 
         Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
@@ -60,20 +74,32 @@ pub async fn create_user(TypedMultipart(SentUser{ email, password }): TypedMulti
     let users_with_this_email : Vec<User> = 
         client
         .from("users")
-        .eq("email", email)
+        .eq("email", user_payload.email.clone())
         .execute()
-        .await?.
-        json()
+        .await?
+        .error_for_status()?
+        .json()
         .await?;
 
-    if !users_with_this_email.is_empty() {
-        
+    if users_with_this_email.is_empty() {
+
+        let new_user = User::new(user_payload.email, user_payload.password);
+
+        dbg!(client
+        .from("users")
+        .insert(new_user)
+        .execute()
+        .await?
+        .error_for_status()?
+        );
+
+        Ok(UserCreationResponse::Success)
+
     } else {
-
+        Ok(UserCreationResponse::Fail(UserCreationResponseError::EmailAlreadyInUse))
     }
-}
-
-pub async fn log_in(TypedMultipart(SentUser{ email, password }): TypedMultipart<SentUser>) -> impl IntoResponse{
 
 }
 
+pub async fn log_in(Json(user_payload) : Json<SentUser>) -> impl IntoResponse {
+}

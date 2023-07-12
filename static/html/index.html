@@ -59,16 +59,18 @@
             <button class="button-close action-button dark-mode-button">⨉</button>
             <h2 class="user-modal-title"></h2>
             <form id="user-form" onsubmit="sumbitButtonAction();return false">
-                <input name="email" id="email-field"   type="email" placeholder="Email" form="user-form" required>
+                <input name="email" id="email-field" type="email" placeholder="Email" form="user-form" required>
                 <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" required>
+                <input name="password-confirmation" id="password-confirmation-field" class="hidden" type="password" placeholder="Confirm Password" form="user-form" required>
                 <input id="submit-button"type="submit" class="action-button submit-button dark-mode-button" type="submit" form="user-form" value="Submit">
+                <p id="modal-error" class="error-message"></p>
             </form>
         </section>
         <section id="error-modal" class="modal hidden">
             <button class="button-close action-button">⨉</button>
             <h2 class="user-modal-title">Sorry!😦</h2>
             <p>There seemed to be an error handling your request</p>
-            <p id="error-message"></p>
+            <p id="error-message" class="error-message"></p>
         </section>
         <section id="markdown-display" class="markdown-display">
         </section>

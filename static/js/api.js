@@ -10,15 +10,10 @@ export const open_modal = (modalTitle,display) => {
     editor.classList.add("hidden");
 
     modal_h2.textContent = modalTitle;
-    const userForm = document.getElementById("user-form");
 
-    switch(modalTitle) {
-        case 'Log In':
-                userForm.action = '/log_in';
-            break;
-        case 'Register':
-                userForm.action = '/create_user';
-            break;
+    if (modalTitle === "Register") {
+        const confirmPassword = document.getElementById("password-confirmation-field");
+        confirmPassword.classList.remove("hidden");
     }
 
     overlay.classList.remove("hidden");
@@ -32,6 +27,8 @@ export const closeModal = (display) => {
     const errorModal = document.getElementById("error-modal");
     const overlay = document.querySelector(".overlay");
     const editor = document.querySelector(".editor-container"); 
+    const confirmPassword = document.getElementById("password-confirmation-field");
+    const errorMessage = document.getElementById("modal-error");
 
     display.classList.remove("hidden");
     editor.classList.remove("hidden");
@@ -39,6 +36,8 @@ export const closeModal = (display) => {
     overlay.classList.add("hidden");
     modal.classList.add("hidden");
     errorModal.classList.add("hidden");
+    confirmPassword.classList.add("hidden");
+    errorMessage.textContent = '';
 }
 
 export const toggleMode = () => {
@@ -155,41 +154,56 @@ export const sendLogIn = async (username, password) => {
         body : JSON.stringify({ email : username , password : password})
     });
 
+    
 
-    const jsonResponse = await response.json();
+    const responseText = await response.text();
 
-    console.log(jsonResponse);
+    console.log(responseText);
 }
 
 
-export const createUser = async (username,password) => {
+export const createUser = async (username,password,confirmPassword) => {
+
+    const modalError = document.getElementById("modal-error");  
+
+    if(password !== confirmPassword) {
+        modalError.textContent = "Passwords dont match";     
+
+        return;
+    }
 
     const response = await fetch("/create_user", {
         method: "POST",
         headers : {
             "Content-Type" : "application/json",
         },
-        body : JSON.stringify({ email : username , password : password})
+        body : JSON.stringify({ email: username ,password : password})
     });
 
-    const jsonResponse = await response.json();
 
-    console.log(jsonResponse);
+    if(response.status != 201) {
+        const responseText = await response.text();
+
+        modalError.textContent = responseText;
+    }
 }
 
 export const sumbitButtonAction = async () => {
 
-            const modalType = document.querySelector(".user-modal-title").textContent;
-            const email = document.getElementById("email-field").textContent;
-            const password = document.getElementById("password-field").textContent;
+            document.getElementById("modal-error").textContent = '';
 
+            const modalType = document.querySelector(".user-modal-title").textContent;
+            const email = document.getElementById("email-field").value;
+            const password = document.getElementById("password-field").value;
+            const confirmPassword =  document.getElementById("password-confirmation-field").value;
+            
 
             switch(modalType){
                 case "Log In":
                        await sendLogIn(email,password); 
                     break;
                 case "Register":
-                        await createUser(email,password);
+                        await createUser(email,password,confirmPassword);
                     break;
             }
 }
