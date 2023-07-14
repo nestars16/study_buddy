@@ -147,6 +147,7 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
 export const sendLogIn = async (username, password) => {
 
     const modalError = document.getElementById("modal-error");  
+    const display = document.getElementById("markdown-display");  
 
     const response = await fetch("/log_in", {
         method: "POST",
@@ -162,14 +163,21 @@ export const sendLogIn = async (username, password) => {
         const responseText = await response.text();
 
         modalError.textContent = responseText;
-    } else {
-        console.log("Logged in");
+        return;
     }
+
+
+
+    console.log("Logged in");
+    closeModal(display);
 
 }
 
 
 export const createUser = async (username,password,confirmPassword) => {
+
+    const modalError = document.getElementById("modal-error");  
+    const display = document.getElementById("markdown-display");  
 
 
     if(password !== confirmPassword) {
@@ -191,10 +199,14 @@ export const createUser = async (username,password,confirmPassword) => {
         const responseText = await response.text();
 
         modalError.textContent = responseText;
+        return;
     }
+
+    console.log("Created User");
+    closeModal(display);
 }
 
-export const sumbitButtonAction = async () => {
+export const submitButtonAction = async () => {
 
             document.getElementById("modal-error").textContent = '';
 

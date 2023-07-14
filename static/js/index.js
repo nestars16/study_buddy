@@ -1,5 +1,5 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers} from './editorActions.js'
-import {downloadMarkdownToPDF, open_modal, closeModal, toggleMode, sumbitButtonAction} from './api.js'
+import {downloadMarkdownToPDF, open_modal, closeModal, toggleMode, submitButtonAction} from './api.js'
 
 "use strict";
 
@@ -27,12 +27,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         submitForm.onsubmit = async (event) => {
             event.preventDefault();
-            await sumbitButtonAction();
+            await submitButtonAction();
         };
 
         submitButton.onclick = async (event) => {
             event.preventDefault();
-            await sumbitButtonAction();
+            await submitButtonAction();
         }
 
         toggleModesButton.onclick = () => {
