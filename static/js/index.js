@@ -1,5 +1,5 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers} from './editorActions.js'
-import {downloadMarkdownToPDF, open_modal, closeModal, toggleMode, submitButtonAction} from './api.js'
+import {downloadMarkdownToPDF, open_modal, closeModal, toggleMode, submitButtonAction, checkForLogInUser} from './api.js'
 
 "use strict";
 
@@ -24,19 +24,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const closeModalButtons = document.querySelectorAll(".button-close");
         const submitForm = document.getElementById("user-form");
         const submitButton  = document.getElementById("submit-button");
+        const logOutButton = document.getElementById("log-out");
 
-        submitForm.onsubmit = async (event) => {
-            event.preventDefault();
-            await submitButtonAction();
-        };
+        //submitForm.onsubmit = async (event) => {
+        //    event.preventDefault();
+        //    await submitButtonAction();
+        //};
 
         submitButton.onclick = async (event) => {
             event.preventDefault();
+            submitButton.classList.add("hidden"); 
+            document.getElementById("loader").classList.remove("hidden"); 
             await submitButtonAction();
         }
 
         toggleModesButton.onclick = () => {
             currentMode = toggleMode(currentMode);
+        }
+
+        logOutButton.onclick = () => {
         }
 
         registerButton.onclick = () => {
@@ -52,7 +58,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 closeModal(display);
             }
         }
-
 
         editor.setAttribute("data-initialized",true);
 
@@ -81,10 +86,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         resizeTextarea(editor);
     }
-
+    
     resizeTextarea(editor);
     highlight(editor,highlight);
     initialSetup();
+    checkForLogInUser();
     editor.value = "";
 
     setInterval(() => {

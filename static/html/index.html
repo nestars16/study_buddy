@@ -43,6 +43,7 @@
         </button>
         <button id="sign-up" class="action-button user-buttons dark-mode-button">Register</button>
         <button id="log-in" class="action-button user-buttons dark-mode-button">Log in</button>
+        <button id="log-out" class="action-button user-buttons dark-mode-button hidden">Log out</button>
         <button id="download" class="action-button download-button dark-mode-button">Download as PDF</button>
     </nav>
     <main>
@@ -63,6 +64,7 @@
                 <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" required>
                 <input name="password-confirmation" id="password-confirmation-field" class="hidden" type="password" placeholder="Confirm Password" form="user-form" required>
                 <input id="submit-button"type="submit" class="action-button submit-button dark-mode-button" type="submit" form="user-form" value="Submit">
+                <span id="loader" class="loader hidden"></span>
                 <p id="modal-error" class="error-message"></p>
             </form>
         </section>

@@ -6,6 +6,9 @@ export const open_modal = (modalTitle,display) => {
     const modal_h2 = document.querySelector(".user-modal-title");
     const editor = document.querySelector(".editor-container"); 
 
+    document.getElementById("submit-button").classList.remove("hidden");
+    document.getElementById("loader").classList.add("hidden");
+
     display.classList.add("hidden");
     editor.classList.add("hidden");
 
@@ -171,6 +174,9 @@ export const sendLogIn = async (username, password) => {
     console.log("Logged in");
     closeModal(display);
 
+    document.getElementById("submit-button").classList.remove("hidden");
+    document.getElementById("loader").classList.add("hidden"); 
+    
 }
 
 
@@ -204,6 +210,10 @@ export const createUser = async (username,password,confirmPassword) => {
 
     console.log("Created User");
     closeModal(display);
+
+    document.getElementById("submit-button").classList.remove("hidden");
+    document.getElementById("loader").classList.add("hidden"); 
+    
 }
 
 export const submitButtonAction = async () => {
@@ -225,5 +235,27 @@ export const submitButtonAction = async () => {
                         await createUser(email,password,confirmPassword);
                     break;
             }
+
+}
+
+
+export const checkForLogInUser = () => {
+
+        
+        const cookiesObject = document.cookie.split('; ').reduce(
+            (prev, current) => {
+                const [name, ...value] = current.split('=');
+                prev[name] = value.join('=');
+                return prev;
+            }, {}); 
+        
+
+    if (cookiesObject.session_id) {
+
+        document.getElementById("sign-up").classList.add("hidden")
+        document.getElementById("log-in").classList.add("hidden")
+        document.getElementById("log-out").classList.remove("hidden");
+
+    }
 
 }
