@@ -231,12 +231,22 @@ border : none;
   font-family: 'Iosevka Web';
   padding : 7px;
   outline:none;
-  border: solid 1px;
   border-radius: 10px;
+} 
+
+.light-mode-text-field {
+  border: solid 1px;
+  color: black;
+  border-color: #D0D7DE;
+  background-color:#FAFAFA;
+}
+
+.dark-mode-text-field {
+  border: solid 1px;
   color: #FAFAFA;
   border-color:#2c3138;
   background-color:#010409;
-} 
+}
 
 .modal form {
   display: flex;

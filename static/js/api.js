@@ -77,16 +77,37 @@ export const toggleMode = () => {
         currentMode = 'dark';
     }
 
+    const modal = document.getElementById("main-modal");
+
+    if (modal.classList.contains("dark-mode-modal")) {
+        modal.classList.remove("dark-mode-modal");
+        modal.classList.add("light-mode-modal");
+    } else {
+        modal.classList.remove("light-mode-modal");
+        modal.classList.add("dark-mode-modal");
+    }
+
     const buttons = document.querySelectorAll(".action-button");
 
     for(let button of buttons) {
-
         if (button.classList.contains("dark-mode-button")) {
             button.classList.remove("dark-mode-button");
             button.classList.add("light-mode-button");
         } else {
             button.classList.remove("light-mode-button");
             button.classList.add("dark-mode-button");
+        }
+    }
+    
+    const inputFields = [document.getElementById("email-field"), document.getElementById("password-field"), document.getElementById("password-confirmation-field")];
+
+    for(let inputField of inputFields) {
+        if (inputField.classList.contains("dark-mode-text-field")) {
+            inputField.classList.remove("dark-mode-text-field");
+            inputField.classList.add("light-mode-text-field");
+        } else {
+            inputField.classList.remove("light-mode-text-field");
+            inputField.classList.add("dark-mode-text-field");
         }
     }
 
