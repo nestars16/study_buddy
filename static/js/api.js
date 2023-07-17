@@ -1,4 +1,23 @@
 
+ const open_external_error_modal = () => {
+
+        const display = document.getElementById("markdown-display");  
+        const errorModal = document.getElementById("error-modal");
+        const overlay = document.querySelector(".overlay");
+        const editor = document.querySelector(".editor-container"); 
+
+        display.classList.add("hidden");
+        editor.classList.add("hidden");
+
+        overlay.classList.remove("hidden");
+        errorModal.classList.remove("hidden");
+
+        document.getElementById("error-message").textContent = 
+            `Error code : ${serverResponse.status} - ${serverResponse.type}`;
+
+ }
+
+
 export const open_modal = (modalTitle,display) => {  
 
     const modal = document.querySelector(".modal");
@@ -118,21 +137,10 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
 
     if (serverResponse.status != SUCCESS) { 
 
-        const display = document.getElementById("markdown-display");  
-        const errorModal = document.getElementById("error-modal");
-        const overlay = document.querySelector(".overlay");
-        const editor = document.querySelector(".editor-container"); 
-
-        display.classList.add("hidden");
-        editor.classList.add("hidden");
-
-        overlay.classList.remove("hidden");
-        errorModal.classList.remove("hidden");
-
-        document.getElementById("error-message").textContent = 
-            `Error code : ${serverResponse.status} - ${serverResponse.type}`;
+        open_external_error_modal();
 
         return;                
+        
     }
 
     const jsonResponse = await serverResponse.json();
@@ -146,11 +154,40 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
     anchor_download.click();
 }
 
+export const getCookiesObject = () => {
+
+        const cookiesObject = document.cookie.split('; ').reduce(
+            (prev, current) => {
+                const [name, ...value] = current.split('=');
+                prev[name] = value.join('=');
+                return prev;
+            }, {}); 
+
+    return cookiesObject;
+}
+
+export const checkForLogInUser = () => {
+
+    const cookiesObject = getCookiesObject(); 
+
+    if (cookiesObject.session_id) {
+
+        document.getElementById("sign-up").classList.add("hidden")
+        document.getElementById("log-in").classList.add("hidden")
+        document.getElementById("log-out").classList.remove("hidden");
+        document.getElementById("add-document").classList.remove("hidden");
+
+    }
+
+}
 
 export const sendLogIn = async (username, password) => {
 
     const modalError = document.getElementById("modal-error");  
     const display = document.getElementById("markdown-display");  
+
+    document.getElementById("submit-button").classList.add("hidden"); 
+    document.getElementById("loader").classList.remove("hidden"); 
 
     const response = await fetch("/log_in", {
         method: "POST",
@@ -165,10 +202,12 @@ export const sendLogIn = async (username, password) => {
 
         const responseText = await response.text();
 
+        document.getElementById("submit-button").classList.remove("hidden");
+        document.getElementById("loader").classList.add("hidden"); 
+
         modalError.textContent = responseText;
         return;
     }
-
 
 
     console.log("Logged in");
@@ -176,7 +215,7 @@ export const sendLogIn = async (username, password) => {
 
     document.getElementById("submit-button").classList.remove("hidden");
     document.getElementById("loader").classList.add("hidden"); 
-    
+    location.reload();
 }
 
 
@@ -192,6 +231,9 @@ export const createUser = async (username,password,confirmPassword) => {
         return;
     }
 
+    document.getElementById("submit-button").classList.add("hidden"); 
+    document.getElementById("loader").classList.remove("hidden"); 
+
     const response = await fetch("/create_user", {
         method: "POST",
         headers : {
@@ -204,6 +246,9 @@ export const createUser = async (username,password,confirmPassword) => {
     if(response.status != 201) {
         const responseText = await response.text();
 
+        document.getElementById("submit-button").classList.remove("hidden");
+        document.getElementById("loader").classList.add("hidden"); 
+
         modalError.textContent = responseText;
         return;
     }
@@ -213,7 +258,8 @@ export const createUser = async (username,password,confirmPassword) => {
 
     document.getElementById("submit-button").classList.remove("hidden");
     document.getElementById("loader").classList.add("hidden"); 
-    
+
+    location.reload();
 }
 
 export const submitButtonAction = async () => {
@@ -235,27 +281,27 @@ export const submitButtonAction = async () => {
                         await createUser(email,password,confirmPassword);
                     break;
             }
-
 }
 
+export const LogOut = async () => {
 
-export const checkForLogInUser = () => {
+    const cookiesObject = getCookiesObject();
 
-        
-        const cookiesObject = document.cookie.split('; ').reduce(
-            (prev, current) => {
-                const [name, ...value] = current.split('=');
-                prev[name] = value.join('=');
-                return prev;
-            }, {}); 
-        
+    const response = await fetch("/log_out", 
+        {
+            method : "POST",
+            headers : {
+                "Content-Type" : "application/json"
+            },
+            body : JSON.stringify({session_id : cookiesObject.session_id })
+        })
 
-    if (cookiesObject.session_id) {
-
-        document.getElementById("sign-up").classList.add("hidden")
-        document.getElementById("log-in").classList.add("hidden")
-        document.getElementById("log-out").classList.remove("hidden");
-
+    if (response.status  != 200) {
+        open_external_error_modal(); 
+        return;
     }
 
+    location.reload();
 }
+
+

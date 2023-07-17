@@ -8,6 +8,7 @@ use study_buddy::users;
 //TODO Users and eventual file navigation
 //TODO vim editor settings for textarea possibly
 
+//TODO make light mode and night mode modals
 //TODO possible async problem with the parsing of markdown??
 //TODO better button delay on frontend
 #[tokio::main]
@@ -23,6 +24,7 @@ async fn main() -> std::io::Result<()> {
         )
         .route("/create_user", post(users::create_user))
         .route("/log_in", post(users::log_in))
+        .route("/log_out", post(users::log_out))
         .nest_service("/static", ServeDir::new("static"));
 
     let server = Server::bind(

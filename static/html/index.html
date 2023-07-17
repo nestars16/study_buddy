@@ -41,6 +41,7 @@
    <path d="M12 7a5 5 0 1 1 -4.995 5.217l-.005 -.217l.005 -.217a5 5 0 0 1 4.995 -4.783z" stroke-width="0" fill="currentColor"></path>
 </svg>
         </button>
+        <button id="add-document" class="action-button dark-mode-button new-document-button hidden">➕</button >
         <button id="sign-up" class="action-button user-buttons dark-mode-button">Register</button>
         <button id="log-in" class="action-button user-buttons dark-mode-button">Log in</button>
         <button id="log-out" class="action-button user-buttons dark-mode-button hidden">Log out</button>
@@ -52,17 +53,17 @@
                 <span></span>
             </div>
             <div class="plain">
-              <textarea class="editor dark-mode-input" id="editor" data-el="input"></textarea>
-              <pre aria-hidden="true" class="plain__highlights"><code id="highlight" data-el="highlight" class="markdown"></code></pre>
+                <textarea class="editor dark-mode-input" id="editor" data-el="input"></textarea>
+                <pre aria-hidden="true" class="plain__highlights"><code id="highlight" data-el="highlight" class="markdown"></code></pre>
             </div>
         </section>
-        <section class="modal hidden">
+        <section id="user-actions-modal" class="modal dark-mode-modal hidden">
             <button class="button-close action-button dark-mode-button">⨉</button>
             <h2 class="user-modal-title"></h2>
             <form id="user-form" onsubmit="sumbitButtonAction();return false">
-                <input name="email" id="email-field" type="email" placeholder="Email" form="user-form" required>
-                <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" required>
-                <input name="password-confirmation" id="password-confirmation-field" class="hidden" type="password" placeholder="Confirm Password" form="user-form" required>
+                <input name="email" id="email-field" type="email" placeholder="Email" form="user-form" class="dark-mode-text-field" required>
+                <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" class="dark-mode-text-field" required>
+                <input name="password-confirmation" id="password-confirmation-field" class="hidden dark-mode-text-field" type="password" placeholder="Confirm Password" form="user-form" required>
                 <input id="submit-button"type="submit" class="action-button submit-button dark-mode-button" type="submit" form="user-form" value="Submit">
                 <span id="loader" class="loader hidden"></span>
                 <p id="modal-error" class="error-message"></p>

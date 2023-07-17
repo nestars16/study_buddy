@@ -1,7 +1,7 @@
 use postgrest::Postgrest;
 use axum::{
     Json,
-    response::IntoResponse
+    response::{Response, IntoResponse}
 };
 
 use serde::{Serialize,Deserialize};
@@ -11,6 +11,11 @@ use bcrypt::{DEFAULT_COST, hash, verify};
 pub struct SentUser {
     email : String,
     password: String,
+}
+
+#[derive(Deserialize)]
+pub struct UuidJson {
+    session_id : uuid::Uuid,
 }
 
 #[derive(Serialize, Deserialize,Debug)]
@@ -109,7 +114,6 @@ impl IntoResponse for UserRequestResponse<UserLogInError> {
     }
 }
 
-//TODO add button delay on frontend
 #[axum_macros::debug_handler]
 pub async fn create_user(Json(user_payload): Json<SentUser>) -> Result<UserRequestResponse<UserCreationError>, crate::ReqwestWrapper> {
 
@@ -187,5 +191,28 @@ pub async fn log_in(Json(user_payload) : Json<SentUser>) -> Result<UserRequestRe
     } else {
         Ok(UserRequestResponse::Fail(UserLogInError::NoMatchingRecord))
     }
+}
 
+#[axum_macros::debug_handler]
+pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response, crate::ReqwestWrapper>{
+
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
+        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+
+    let update_param_string = format!("{{ \"session_id\" : \"NULL\" }}");
+
+    client
+        .from("users")
+        .eq("session_id", user_session_id.session_id.to_string())
+        .update(update_param_string)
+        .execute()
+        .await?;
+
+    use axum::http::{header,StatusCode};
+
+    let headers = [
+        (header::SET_COOKIE, format!("session_id=''; expires=Thu, 01 Jan 1970 00:00:00 GMT")),
+    ];
+
+    Ok((StatusCode::OK,headers,"Logged out and invalidated user session").into_response())
 }

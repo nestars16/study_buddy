@@ -192,6 +192,10 @@ border : none;
     transition : width, height 2s;
 }
 
+.top-navbar a {
+    font-size: 2rem;
+}
+
 .top-navbar h1{
     margin: 10px auto 10px 10px;
     font-size: 1.5rem;
@@ -206,22 +210,32 @@ border : none;
   margin: auto;
   border: solid 0.5px;
   padding : 1rem 1rem 1rem 1rem;
-  border-color: #2c3138;
-  color : #FAFAFA;
-  background-color:#010409;
   border-radius: 5px;
   text-align: left;
   z-index: 3;
 }
+
+.light-mode-modal {
+    color : black;
+    background-color: #FAFAFA;
+    border-color: #D0D7DE;
+}
+
+.dark-mode-modal {
+  color : #FAFAFA;
+  background-color:#010409;
+  border-color: #2c3138;
+}
+
 .modal input[type="email"], input[type="password"] {
   font-family: 'Iosevka Web';
   padding : 7px;
   outline:none;
   border: solid 1px;
-  border-color:#2c3138;
-  background-color:#010409;
   border-radius: 10px;
   color: #FAFAFA;
+  border-color:#2c3138;
+  background-color:#010409;
 } 
 
 .modal form {
@@ -348,3 +362,8 @@ border : none;
             transform: scale(1.2, 1);
           }
         }
+
+.new-document-button {
+    color : #FAFAFA,
+}
+

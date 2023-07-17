@@ -1,15 +1,11 @@
 use axum::{
-    body::StreamBody,
     extract::{
-        ws::{Message, WebSocket},
-        State, WebSocketUpgrade,
+        ws::{Message, WebSocket}, WebSocketUpgrade,
     },
     response::{Html, IntoResponse, Json, Response},
 };
-use futures::{sink::SinkExt, stream::StreamExt};
 use serde::{Deserialize, Serialize};
-use std::sync::{Arc, Mutex};
-use tokio::{fs::read_to_string, sync};
+use tokio::fs::read_to_string;
 
 
 pub async fn get_root() -> Html<String> {
