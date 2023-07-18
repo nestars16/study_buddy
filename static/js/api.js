@@ -1,4 +1,4 @@
- const open_external_error_modal = () => {
+ const open_external_error_modal = (serverResponse) => {
 
         const display = document.getElementById("markdown-display");  
         const errorModal = document.getElementById("error-modal");
@@ -34,7 +34,7 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
 
     if (serverResponse.status != SUCCESS) { 
 
-        open_external_error_modal();
+        open_external_error_modal(serverResponse);
 
         return;                
         
@@ -121,7 +121,6 @@ export const createUser = async (username,password,confirmPassword) => {
     const modalError = document.getElementById("modal-error");  
     const display = document.getElementById("markdown-display");  
 
-
     if(password !== confirmPassword) {
         modalError.textContent = "Passwords dont match";     
 
@@ -193,11 +192,29 @@ export const LogOut = async () => {
         })
 
     if (response.status  != 200) {
-        open_external_error_modal(); 
+        open_external_error_modal(response); 
         return;
     }
 
     location.reload();
 }
 
+export const createPost = async (title, frontEndCallback) => {
 
+    const cookiesObject = getCookiesObject();
+
+    const response = await fetch("/create_post", {
+        method : "POST",
+        headers : {
+            "Content-Type" : "application/json"
+        },
+        body : JSON.stringify({session_id : cookiesObject.session_id, post_title : title})
+    });
+
+    if (response.status != 201) {
+        open_external_error_modal(response); 
+        return;
+    }
+
+    frontEndCallback(title);
+}

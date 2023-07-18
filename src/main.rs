@@ -7,8 +7,8 @@ use study_buddy::users;
 
 //TODO Users and eventual file navigation
 //TODO vim editor settings for textarea possibly
+//TODO Rate limiting
 
-//TODO make light mode and night mode modals
 //TODO possible async problem with the parsing of markdown??
 //TODO better button delay on frontend
 //TODO add timeout to connections

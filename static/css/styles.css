@@ -388,3 +388,30 @@ light-user-modal-title {
 .title-modal {
     max-height: 15%;
 }
+
+.tabs-container {
+    display : flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: left;
+    gap: 10px;
+}
+
+.tab {
+    border : none;
+    border-radius: 15px 15px 0px 0px;
+    position: relative;
+    height: 100%;
+    display: inline-block;
+}
+
+.dark-mode-tab {
+    color: #506882;
+    background-color: #161B2F;
+}
+
+.light-mode-tab {
+    color: black;
+    background-color: #D0D0D7;
+}
+

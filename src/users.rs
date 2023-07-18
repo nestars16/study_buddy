@@ -16,6 +16,7 @@ pub struct SentUser {
 #[derive(Deserialize)]
 pub struct UuidJson {
     session_id : uuid::Uuid,
+    post_title : Option<String>
 }
 
 #[derive(Serialize, Deserialize,Debug)]
@@ -26,16 +27,30 @@ pub struct User {
     session_id : Option<uuid::Uuid>,
 }
 
-pub struct Post {
+#[derive(Serialize, Clone)]
+pub struct Document {
     user_id : uuid::Uuid,
     title : String,
     content: String,
+    document_id : uuid::Uuid,
+}
+
+impl Document {
+    fn new(user_id : uuid::Uuid, title : String)  -> Self {
+        Document{ user_id, title, content: String::new(), document_id : uuid::Uuid::new_v4()}
+    }
 }
 
 impl User {
     fn new(email : String, password:  String) -> Self {
         let password = hash(password, DEFAULT_COST).expect("All passwords should hash");
         User{id : uuid::Uuid::new_v4(),email,password, session_id : Some(uuid::Uuid::new_v4()) }
+    }
+}
+
+impl From<Document> for String {
+    fn from(value: Document) -> Self {
+        serde_json::to_string(&value).expect("Type is serializable")
     }
 }
 
@@ -76,12 +91,11 @@ impl IntoResponse for UserRequestResponse<UserCreationError>{
 
             }
             Self::Fail(error) => {
-                
-                let error_message = match error {
-                    UserCreationError::EmailAlreadyInUse => "This email is already in use"
-                };
+                match error {
+                    UserCreationError::EmailAlreadyInUse => (StatusCode::CONFLICT, "This email is already in use").into_response(),
+                    //_ =>  (StatusCode::INTERNAL_SERVER_ERROR, "Something went wrong with your request").into_response(),
+                }
 
-                (StatusCode::INTERNAL_SERVER_ERROR,error_message).into_response()
             }
         }
     }
@@ -181,7 +195,8 @@ pub async fn log_in(Json(user_payload) : Json<SentUser>) -> Result<UserRequestRe
                 .eq("id", user_with_email.id.to_string())
                 .update(update_param_string)
                 .execute()
-                .await?;
+                .await?
+                .error_for_status()?;
 
             Ok(UserRequestResponse::Success(user_with_email.session_id.expect("Session_id guaranteed to be set")))
                 
@@ -199,13 +214,15 @@ pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response,
     let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
         insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
 
-    let update_param_string = format!("{{ \"session_id\" : \"NULL\" }}");
 
     client
         .from("users")
         .eq("session_id", user_session_id.session_id.to_string())
-        .update(update_param_string)
+        .update(r#"{ "session_id" : null }"#)
         .execute()
+        .await?
+        .error_for_status()?
+        .text()
         .await?;
 
     use axum::http::{header,StatusCode};
@@ -217,10 +234,40 @@ pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response,
     Ok((StatusCode::OK,headers,"Logged out and invalidated user session").into_response())
 }
 
-pub async fn create_post(Json(user_session_id) : Json<UuidJson>)  {
-    
+pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Json<Result<Document, &'static str>>, crate::ReqwestWrapper> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
+        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
 
+    let user_with_session = client
+        .from("users")
+        .eq("session_id", user_request_info.session_id.to_string())
+        .execute()
+        .await?
+        .error_for_status()?
+        .json::<Vec<User>>()
+        .await?
+        .pop();
+        
+    if let Some(_valid_user)  = user_with_session {
 
+        if let Some(post_title) = user_request_info.post_title {
+
+        let new_document = Document::new(user_request_info.session_id, post_title);
+
+        client
+            .from("documents")
+            .insert(new_document.clone())
+            .execute()
+            .await?
+            .error_for_status()?;
+
+            return Ok(Json(Ok(new_document)));
+        } 
+
+        Ok(Json(Err("Request doesn't contain title")))
+    } else {
+        Ok(Json(Err("Invalid user session")))
+    }
 }
 
 pub async fn save_post(Json(user_session_id) : Json<UuidJson>)  {
