@@ -153,6 +153,10 @@ border : none;
     color : #FAFAFA;
 }
 
+.all-documents-button{
+    color: #31373D;
+}
+
 .light-mode-button {
     color : black;
 }

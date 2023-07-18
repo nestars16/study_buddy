@@ -1,4 +1,4 @@
- const open_external_error_modal = (serverResponse) => {
+ const open_external_error_modal = (serverResponse, text) => {
 
         const display = document.getElementById("markdown-display");  
         const errorModal = document.getElementById("error-modal");
@@ -12,7 +12,7 @@
         errorModal.classList.remove("hidden");
 
         document.getElementById("error-message").textContent = 
-            `Error code : ${serverResponse.status} - ${serverResponse.type}`;
+            `Error code : ${serverResponse.status} - ${text.slice(0,25)}...`;
 
  }
 
@@ -34,7 +34,7 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
 
     if (serverResponse.status != SUCCESS) { 
 
-        open_external_error_modal(serverResponse);
+        open_external_error_modal(serverResponse, await serverResponse.text());
 
         return;                
         
@@ -73,6 +73,7 @@ export const checkForLogInUser = () => {
         document.getElementById("log-in").classList.add("hidden")
         document.getElementById("log-out").classList.remove("hidden");
         document.getElementById("add-document").classList.remove("hidden");
+        document.getElementById("all-documents").classList.remove("hidden");
 
     }
 
@@ -81,7 +82,6 @@ export const checkForLogInUser = () => {
 export const sendLogIn = async (username, password) => {
 
     const modalError = document.getElementById("modal-error");  
-    const display = document.getElementById("markdown-display");  
 
     document.getElementById("submit-button").classList.add("hidden"); 
     document.getElementById("loader").classList.remove("hidden"); 
@@ -119,7 +119,6 @@ export const sendLogIn = async (username, password) => {
 export const createUser = async (username,password,confirmPassword) => {
 
     const modalError = document.getElementById("modal-error");  
-    const display = document.getElementById("markdown-display");  
 
     if(password !== confirmPassword) {
         modalError.textContent = "Passwords dont match";     
@@ -188,18 +187,18 @@ export const LogOut = async () => {
             headers : {
                 "Content-Type" : "application/json"
             },
-            body : JSON.stringify({session_id : cookiesObject.session_id })
+            body : JSON.stringify({unique_id : cookiesObject.session_id })
         })
 
     if (response.status  != 200) {
-        open_external_error_modal(response); 
+        open_external_error_modal(response, await response.text()); 
         return;
     }
 
     location.reload();
 }
 
-export const createPost = async (title, frontEndCallback) => {
+export const createPost = async (title) => {
 
     const cookiesObject = getCookiesObject();
 
@@ -208,13 +207,20 @@ export const createPost = async (title, frontEndCallback) => {
         headers : {
             "Content-Type" : "application/json"
         },
-        body : JSON.stringify({session_id : cookiesObject.session_id, post_title : title})
+        body : JSON.stringify({unique_id: cookiesObject.session_id, post_title : title})
     });
 
-    if (response.status != 201) {
-        open_external_error_modal(response); 
+    const jsonResponse = await response.json()
+    console.log(jsonResponse);
+
+    if (!jsonResponse.Ok) {
+        document.getElementById("user-document-title-modal").classList.add("hidden");
+        document.getElementById("overlay").classList.add("hidden");
+        open_external_error_modal(response, await response.text()); 
         return;
     }
 
-    frontEndCallback(title);
+    document.getElementById("document-title").textContent = title;
+    document.getElementById("user-document-title-modal").classList.add("hidden");
+    document.getElementById("overlay").classList.add("hidden");
 }

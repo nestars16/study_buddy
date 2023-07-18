@@ -1,5 +1,5 @@
-import {highlight,resizeTextarea,enableTabbing,updateLineNumbers, openModal, closeModal, toggleMode, openDocumentTitleModal, addDocumentTab} from './editorActions.js'
-import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, LogOut} from './api.js'
+import {highlight,resizeTextarea,enableTabbing,updateLineNumbers, openModal, closeModal, toggleMode, openDocumentTitleModal} from './editorActions.js'
+import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, LogOut, createPost} from './api.js'
 
 "use strict";
 
@@ -40,9 +40,8 @@ let refreshMathTexCounter = 10;
                 return;
             }
 
-            createPost(document.getElementById("document-title-field").value, addDocumentTab);
+            await createPost(document.getElementById("document-title-field").value);
 
-            closeModal();    
         }
 
         submitButton.onclick = async (event) => {

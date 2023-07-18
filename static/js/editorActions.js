@@ -210,13 +210,7 @@ export const toggleMode = () => {
     return currentMode;
 }
 
-export const addDocumentTab = (title, currentMode) => {
+export const changeToSelectedDocument = () => {
 
-    const documentBar = document.getElementById("document-bar");
-    const newTab = document.createElement("button");
-    newTab.appendChild(document.createTextNode(title));
-    newTab.classList.add("tab" , `${currentMode}-mode-tab`, "action-button");
-
-    documentBar.appendChild(newTab);
 }
 

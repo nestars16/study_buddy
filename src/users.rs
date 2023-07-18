@@ -13,9 +13,9 @@ pub struct SentUser {
     password: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize)]
 pub struct UuidJson {
-    session_id : uuid::Uuid,
+    unique_id: uuid::Uuid,
     post_title : Option<String>
 }
 
@@ -34,6 +34,7 @@ pub struct Document {
     content: String,
     document_id : uuid::Uuid,
 }
+
 
 impl Document {
     fn new(user_id : uuid::Uuid, title : String)  -> Self {
@@ -214,10 +215,10 @@ pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response,
     let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
         insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
 
-
+    //Unique id in this case is the session id to invalidate in the database
     client
         .from("users")
-        .eq("session_id", user_session_id.session_id.to_string())
+        .eq("session_id", user_session_id.unique_id.to_string())
         .update(r#"{ "session_id" : null }"#)
         .execute()
         .await?
@@ -234,25 +235,27 @@ pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response,
     Ok((StatusCode::OK,headers,"Logged out and invalidated user session").into_response())
 }
 
-pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Json<Result<Document, &'static str>>, crate::ReqwestWrapper> {
+#[axum_macros::debug_handler]
+pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Json<Result<UuidJson, &'static str>>, crate::ReqwestWrapper> {
+
     let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
         insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
 
     let user_with_session = client
         .from("users")
-        .eq("session_id", user_request_info.session_id.to_string())
+        .eq("session_id", user_request_info.unique_id.to_string())
         .execute()
         .await?
         .error_for_status()?
         .json::<Vec<User>>()
         .await?
         .pop();
-        
-    if let Some(_valid_user)  = user_with_session {
+
+    if let Some(valid_user)  = user_with_session {
 
         if let Some(post_title) = user_request_info.post_title {
 
-        let new_document = Document::new(user_request_info.session_id, post_title);
+        let new_document = Document::new(valid_user.id, post_title);
 
         client
             .from("documents")
@@ -261,13 +264,16 @@ pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Js
             .await?
             .error_for_status()?;
 
-            return Ok(Json(Ok(new_document)));
+            return Ok(Json(Ok(UuidJson{unique_id: new_document.document_id , post_title: Some(new_document.title)})));
         } 
 
         Ok(Json(Err("Request doesn't contain title")))
+
     } else {
+
         Ok(Json(Err("Invalid user session")))
     }
+
 }
 
 pub async fn save_post(Json(user_session_id) : Json<UuidJson>)  {
