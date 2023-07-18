@@ -216,3 +216,13 @@ pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response,
 
     Ok((StatusCode::OK,headers,"Logged out and invalidated user session").into_response())
 }
+
+pub async fn create_post(Json(user_session_id) : Json<UuidJson>)  {
+    
+
+
+}
+
+pub async fn save_post(Json(user_session_id) : Json<UuidJson>)  {
+
+}

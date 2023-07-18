@@ -1,5 +1,5 @@
-import {highlight,resizeTextarea,enableTabbing,updateLineNumbers} from './editorActions.js'
-import {downloadMarkdownToPDF, open_modal, closeModal, toggleMode, submitButtonAction, checkForLogInUser, LogOut} from './api.js'
+import {highlight,resizeTextarea,enableTabbing,updateLineNumbers, openModal, closeModal, toggleMode, openDocumentTitleModal} from './editorActions.js'
+import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, LogOut} from './api.js'
 
 "use strict";
 
@@ -24,6 +24,11 @@ document.addEventListener("DOMContentLoaded", () => {
         const closeModalButtons = document.querySelectorAll(".button-close");
         const submitButton  = document.getElementById("submit-button");
         const logOutButton = document.getElementById("log-out");
+        const addButton = document.getElementById("add-document");
+
+        addButton.onclick = () => {
+           openDocumentTitleModal(); 
+        }
 
         submitButton.onclick = async (event) => {
             event.preventDefault();
@@ -39,11 +44,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         registerButton.onclick = () => {
-            open_modal("Register",display);
+            openModal("Register");
         }
 
         logInButton.onclick = () => {
-            open_modal("Log In",display);
+            openModal("Log In");
         }
 
         for (let button of closeModalButtons) {

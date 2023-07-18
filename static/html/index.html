@@ -23,6 +23,8 @@
 <body class="dark-mode-body">
     <nav class="top-navbar">
         <h1>Study Buddy</h1>
+        <div id="document-bar" class="tabs">
+        </div>
         <button id="toggle-modes" class="action-button dark-mode-toggle dark-mode-button">
 <svg id="moon" xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-moon-filled" width="24" height="24" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" fill="none" stroke-linecap="round" stroke-linejoin="round">
    <path stroke="none" d="M0 0h24v24H0z" fill="none"></path>
@@ -59,7 +61,7 @@
         </section>
         <section id="main-modal" class="modal dark-mode-modal hidden">
             <button class="button-close action-button dark-mode-button">⨉</button>
-            <h2 class="user-modal-title"></h2>
+            <h2 class="user-modal-title dark-user-modal-title"></h2>
             <form id="user-form">
                 <input name="email" id="email-field" type="email" placeholder="Email" form="user-form" class="dark-mode-text-field" required>
                 <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" class="dark-mode-text-field" required>
@@ -69,11 +71,18 @@
                 <p id="modal-error" class="error-message"></p>
             </form>
         </section>
-        <section id="error-modal" class="modal hidden">
-            <button class="button-close action-button">⨉</button>
-            <h2 class="user-modal-title">Sorry!😦</h2>
+        <section id="error-modal" class="modal dark-mode-modal hidden">
+            <button class="button-close dark-mode-button action-button">⨉</button>
+            <h2 class="user-modal-title dark-user-modal-title">Sorry!😦</h2>
             <p>There seemed to be an error handling your request</p>
             <p id="error-message" class="error-message"></p>
+        </section>
+        <section id="user-document-title-modal" class="modal title-modal dark-mode-modal hidden">
+            <button class="button-close action-button">⨉</button>
+            <form id="document-title-form">
+                <input id="document-title-field" type="text" class="dark-mode-text-field" placeholder="Enter the title of your document">
+                <input id="document-title-submit" type="sumbit"  class="action-button submit-button dark-mode-button" form="document-title-form" value="Submit">
+            </form>
         </section>
         <section id="markdown-display" class="markdown-display">
         </section>

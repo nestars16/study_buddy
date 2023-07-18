@@ -11,6 +11,7 @@ use study_buddy::users;
 //TODO make light mode and night mode modals
 //TODO possible async problem with the parsing of markdown??
 //TODO better button delay on frontend
+//TODO add timeout to connections
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
@@ -25,6 +26,8 @@ async fn main() -> std::io::Result<()> {
         .route("/create_user", post(users::create_user))
         .route("/log_in", post(users::log_in))
         .route("/log_out", post(users::log_out))
+        .route("/create_post", post(users::create_post))
+        .route("/save", post(users::save_post))
         .nest_service("/static", ServeDir::new("static"));
 
     let server = Server::bind(
