@@ -1,5 +1,5 @@
-import {highlight,resizeTextarea,enableTabbing,updateLineNumbers, openModal, closeModal, toggleMode, openDocumentTitleModal} from './editorActions.js'
-import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, LogOut, createPost} from './api.js'
+import {highlight,resizeTextarea,enableTabbing,updateLineNumbers, openModal, closeModal, toggleMode, openDocumentTitleModal, showUserPosts} from './editorActions.js'
+import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, LogOut, createPost, fetchUserPosts} from './api.js'
 
 "use strict";
 
@@ -11,6 +11,7 @@ let currentMode = 'dark';
 const highlightEl = document.getElementById("highlight");
 const editor = document.getElementById("editor");
 const display = document.getElementById("markdown-display");  
+let currentDocuments = [];
 let refreshMathTexCounter = 10;
 
     const initialSetup = async () => {
@@ -25,6 +26,14 @@ let refreshMathTexCounter = 10;
         const addButton = document.getElementById("add-document");
         const documentTitleSubmit = document.getElementById("document-title-submit");
         const documentTitleForm = document.getElementById("document-title-form");
+        const showAllDocumentsButton = document.getElementById("all-documents");
+
+        showAllDocumentsButton.onclick = async () => {
+            currentDocuments = await fetchUserPosts();
+
+            console.log(currentDocuments);
+            showUserPosts(currentDocuments);
+        }
 
         addButton.onclick = () => {
            openDocumentTitleModal(); 

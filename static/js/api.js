@@ -207,7 +207,7 @@ export const createPost = async (title) => {
         headers : {
             "Content-Type" : "application/json"
         },
-        body : JSON.stringify({unique_id: cookiesObject.session_id, post_title : title})
+        body : JSON.stringify({unique_id: cookiesObject.session_id, text : title})
     });
 
 
@@ -227,10 +227,25 @@ export const createPost = async (title) => {
     overlay.classList.add("hidden");
 }
 
-export const fetchUserPosts  = async (title) => {
+export const fetchUserPosts  = async () => {
 
     const cookiesObject = getCookiesObject();
 
+    const response = await fetch("/fetch_posts", {
+        method : "POST",
+        headers : {
+            "Content-Type" : "application/json"
+        },
+        body : JSON.stringify({unique_id : cookiesObject.session_id, text : null})
+    });
 
+    if (response.status != 200) {
+        open_external_error_modal(response, await response.text());
+        return;
+    }
 
+    return await response.json();
 }
+
+
+

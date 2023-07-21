@@ -17,7 +17,7 @@ pub struct SentUser {
 #[derive(Deserialize, Serialize)]
 pub struct UuidJson {
     unique_id: uuid::Uuid,
-    post_title : Option<String>
+    text : Option<String>
 }
 
 #[derive(Serialize, Deserialize,Debug)]
@@ -221,10 +221,7 @@ pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response,
         .update(r#"{ "session_id" : null }"#)
         .execute()
         .await?
-        .error_for_status()?
-        .text()
-        .await?;
-
+        .error_for_status()?;
 
     let headers = [
         (header::SET_COOKIE, format!("session_id=''; expires=Thu, 01 Jan 1970 00:00:00 GMT")),
@@ -251,18 +248,18 @@ pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Re
 
     if let Some(valid_user)  = user_with_session {
 
-        if let Some(post_title) = user_request_info.post_title {
+        if let Some(post_title) = user_request_info.text {
 
         let new_document = Document::new(valid_user.id, post_title);
 
         client
             .from("documents")
-            .insert(dbg!(new_document.clone()))
+            .insert(new_document.clone())
             .execute()
             .await?
             .error_for_status()?;
 
-            return Ok(Ok(Json(UuidJson{unique_id: new_document.document_id , post_title: Some(new_document.title)})));
+            return Ok(Ok(Json(UuidJson{unique_id: new_document.document_id , text : Some(new_document.title)})));
         } 
 
         Ok(Err((StatusCode::BAD_REQUEST, "The request doesn't contain a document title").into_response()))
@@ -274,46 +271,88 @@ pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Re
 
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize,Serialize)]
 pub struct DatabaseDocumentRecords {
-document_id : uuid::Uuid,
-title : String,
+    document_id : uuid::Uuid,
+    title : String,
 }
 
-pub async fn fetch_post(Json(user_session_id) : Json<UuidJson>) -> Result<Result<Json<Vec<DatabaseDocumentRecords>>,Response>, crate::ReqwestWrapper>{
+pub async fn fetch_posts(Json(user_session_id) : Json<UuidJson>) -> Result<Result<Json<Vec<DatabaseDocumentRecords>>,Response>, crate::ReqwestWrapper>{
 
     let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
         insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
 
-    let user_id = client
+    let user = client
         .from("users")
         .eq("session_id", user_session_id.unique_id.to_string())
-        .select("id")
         .execute()
         .await?
         .error_for_status()?
-        .json::<Vec<uuid::Uuid>>()
+        .json::<Vec<User>>()
         .await?
         .pop();
 
-    if let Some(id) = user_id {
+    if let Some(user_with_session) = user {
 
         let user_posts = client
             .from("documents")
-            .eq("id", id.to_string())
-            .select("document_id title")
+            .eq("user_id", user_with_session.id.to_string())
+            .select("title, document_id")
             .execute()
             .await?
+            .error_for_status()?
             .json::<Vec<DatabaseDocumentRecords>>()
             .await?;
 
         Ok(Ok(Json(user_posts)))
-
     }else {
          Ok(Err((StatusCode::UNAUTHORIZED, "Invalid user session").into_response()))
     }
 }
 
-pub async fn save_post(Json(user_session_id) : Json<UuidJson>)  {
+#[derive(Serialize,Deserialize)]
+pub struct SavePostRequest
+{
+    user_id : uuid::Uuid,
+    document_id : uuid::Uuid,
+    text : String,
+}
 
+pub async fn save_post(Json(user_save_request) : Json<SavePostRequest>)  -> Result<Response, crate::ReqwestWrapper>{
+
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
+        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+
+
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
+        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+
+    let user_with_session = client
+        .from("users")
+        .eq("session_id", user_save_request.user_id.to_string())
+        .execute()
+        .await?
+        .error_for_status()?
+        .json::<Vec<User>>()
+        .await?
+        .pop();
+
+    if let Some(valid_user)  = user_with_session {
+
+        let update_string = format!("{{ \"content\" : \"{}\" }}", user_save_request.text);
+
+        client
+            .from("documents")
+            .eq("document_id", user_save_request.document_id.to_string())
+            .update(update_string)
+            .execute()
+            .await?
+            .error_for_status()?;
+
+        Ok((StatusCode::OK, "Post contents saved succesfully").into_response())
+
+    } else {
+
+        Ok((StatusCode::UNAUTHORIZED, "Invalid user session").into_response())
+    }
 }

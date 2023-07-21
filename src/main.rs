@@ -28,6 +28,7 @@ async fn main() -> std::io::Result<()> {
         .route("/log_out", post(users::log_out))
         .route("/create_post", post(users::create_post))
         .route("/save", post(users::save_post))
+        .route("/fetch_posts", post(users::fetch_posts))
         .nest_service("/static", ServeDir::new("static"));
 
     let server = Server::bind(

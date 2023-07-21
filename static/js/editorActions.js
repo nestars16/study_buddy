@@ -219,3 +219,9 @@ export const changeToSelectedDocument = () => {
 
 }
 
+export const showUserPosts = (postArray) => {
+
+    
+
+}
+
