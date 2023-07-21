@@ -158,6 +158,11 @@ export const toggleMode = () => {
     const buttons = document.querySelectorAll(".action-button");
 
     for(let button of buttons) {
+
+        if(button.id === "all-documents") {
+            continue;
+        }
+
         if (button.classList.contains("dark-mode-button")) {
             button.classList.remove("dark-mode-button");
             button.classList.add("light-mode-button");

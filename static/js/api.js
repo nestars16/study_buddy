@@ -210,17 +210,27 @@ export const createPost = async (title) => {
         body : JSON.stringify({unique_id: cookiesObject.session_id, post_title : title})
     });
 
-    const jsonResponse = await response.json()
-    console.log(jsonResponse);
 
-    if (!jsonResponse.Ok) {
+    if (response.status != 200) {
         document.getElementById("user-document-title-modal").classList.add("hidden");
         document.getElementById("overlay").classList.add("hidden");
         open_external_error_modal(response, await response.text()); 
         return;
     }
+    
+    const jsonResponse = await response.json();
+    console.log(jsonResponse);
 
     document.getElementById("document-title").textContent = title;
     document.getElementById("user-document-title-modal").classList.add("hidden");
-    document.getElementById("overlay").classList.add("hidden");
+    const overlay = document.querySelector(".overlay");
+    overlay.classList.add("hidden");
+}
+
+export const fetchUserPosts  = async (title) => {
+
+    const cookiesObject = getCookiesObject();
+
+
+
 }

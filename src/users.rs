@@ -1,7 +1,8 @@
 use postgrest::Postgrest;
 use axum::{
     Json,
-    response::{Response, IntoResponse}
+    response::{Response, IntoResponse},
+    http::{StatusCode,header}
 };
 
 use serde::{Serialize,Deserialize};
@@ -27,7 +28,7 @@ pub struct User {
     session_id : Option<uuid::Uuid>,
 }
 
-#[derive(Serialize, Clone)]
+#[derive(Serialize, Clone, Debug)]
 pub struct Document {
     user_id : uuid::Uuid,
     title : String,
@@ -76,10 +77,10 @@ pub enum UserRequestResponse<ErrorT>{
     Fail(ErrorT)
 }
 
+
 impl IntoResponse for UserRequestResponse<UserCreationError>{
     fn into_response(self) -> axum::response::Response {
 
-        use axum::http::{StatusCode,header};
 
         match self {
             Self::Success(id)=>  {
@@ -106,7 +107,6 @@ impl IntoResponse for UserRequestResponse<UserLogInError> {
 
     fn into_response(self) -> axum::response::Response {
 
-        use axum::http::{StatusCode,header};
 
         match self {
             Self::Success(id)=>  {
@@ -123,7 +123,7 @@ impl IntoResponse for UserRequestResponse<UserLogInError> {
                     UserLogInError::IncorrectPasswordOrEmail => "Incorrect Password or Email",
                 };
 
-                (StatusCode::INTERNAL_SERVER_ERROR,error_message).into_response()
+                (StatusCode::UNAUTHORIZED,error_message).into_response()
             }
         }
     }
@@ -209,7 +209,6 @@ pub async fn log_in(Json(user_payload) : Json<SentUser>) -> Result<UserRequestRe
     }
 }
 
-#[axum_macros::debug_handler]
 pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response, crate::ReqwestWrapper>{
 
     let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
@@ -226,7 +225,6 @@ pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response,
         .text()
         .await?;
 
-    use axum::http::{header,StatusCode};
 
     let headers = [
         (header::SET_COOKIE, format!("session_id=''; expires=Thu, 01 Jan 1970 00:00:00 GMT")),
@@ -235,8 +233,7 @@ pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response,
     Ok((StatusCode::OK,headers,"Logged out and invalidated user session").into_response())
 }
 
-#[axum_macros::debug_handler]
-pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Json<Result<UuidJson, &'static str>>, crate::ReqwestWrapper> {
+pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Result<Json<UuidJson>,Response>, crate::ReqwestWrapper> {
 
     let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
         insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
@@ -251,6 +248,7 @@ pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Js
         .await?
         .pop();
 
+
     if let Some(valid_user)  = user_with_session {
 
         if let Some(post_title) = user_request_info.post_title {
@@ -259,21 +257,61 @@ pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Js
 
         client
             .from("documents")
-            .insert(new_document.clone())
+            .insert(dbg!(new_document.clone()))
             .execute()
             .await?
             .error_for_status()?;
 
-            return Ok(Json(Ok(UuidJson{unique_id: new_document.document_id , post_title: Some(new_document.title)})));
+            return Ok(Ok(Json(UuidJson{unique_id: new_document.document_id , post_title: Some(new_document.title)})));
         } 
 
-        Ok(Json(Err("Request doesn't contain title")))
+        Ok(Err((StatusCode::BAD_REQUEST, "The request doesn't contain a document title").into_response()))
 
     } else {
 
-        Ok(Json(Err("Invalid user session")))
+        Ok(Err((StatusCode::UNAUTHORIZED, "Invalid user session").into_response()))
     }
 
+}
+
+#[derive(Deserialize)]
+pub struct DatabaseDocumentRecords {
+document_id : uuid::Uuid,
+title : String,
+}
+
+pub async fn fetch_post(Json(user_session_id) : Json<UuidJson>) -> Result<Result<Json<Vec<DatabaseDocumentRecords>>,Response>, crate::ReqwestWrapper>{
+
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
+        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+
+    let user_id = client
+        .from("users")
+        .eq("session_id", user_session_id.unique_id.to_string())
+        .select("id")
+        .execute()
+        .await?
+        .error_for_status()?
+        .json::<Vec<uuid::Uuid>>()
+        .await?
+        .pop();
+
+    if let Some(id) = user_id {
+
+        let user_posts = client
+            .from("documents")
+            .eq("id", id.to_string())
+            .select("document_id title")
+            .execute()
+            .await?
+            .json::<Vec<DatabaseDocumentRecords>>()
+            .await?;
+
+        Ok(Ok(Json(user_posts)))
+
+    }else {
+         Ok(Err((StatusCode::UNAUTHORIZED, "Invalid user session").into_response()))
+    }
 }
 
 pub async fn save_post(Json(user_session_id) : Json<UuidJson>)  {

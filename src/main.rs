@@ -5,7 +5,7 @@ use axum::{
 use tower_http::services::ServeDir;
 use study_buddy::users;
 
-//TODO Users and eventual file navigation
+//TODO file navigation
 //TODO vim editor settings for textarea possibly
 //TODO Rate limiting
 
