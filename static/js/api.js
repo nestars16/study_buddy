@@ -229,9 +229,10 @@ export const createPost = async (title) => {
 
 export const fetchUserPosts  = async () => {
 
-    const cookiesObject = getCookiesObject();
-
-    const response = await fetch("/fetch_posts");
+    const response = await fetch("/fetch_posts", {
+        method : "GET",
+        credentials : "include"
+    });
 
     if (response.status != 200) {
         open_external_error_modal(response, await response.text());

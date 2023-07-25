@@ -133,7 +133,7 @@ export const toggleMode = () => {
 
     const titles = document.querySelectorAll(".user-modal-title");
 
-    for(let title of titles) {
+    for(const title of titles) {
         if(title.classList.contains("dark-user-modal-title")){
             title.classList.remove("dark-user-modal-title");
             title.classList.add("light-user-modal-title");
@@ -145,7 +145,7 @@ export const toggleMode = () => {
 
     const modals = document.querySelectorAll(".modal");
 
-    for(let modal of modals) {
+    for(const modal of modals) {
         if (modal.classList.contains("dark-mode-modal")) {
             modal.classList.remove("dark-mode-modal");
             modal.classList.add("light-mode-modal");
@@ -157,7 +157,7 @@ export const toggleMode = () => {
 
     const buttons = document.querySelectorAll(".action-button");
 
-    for(let button of buttons) {
+    for(const button of buttons) {
 
         if(button.id === "all-documents") {
             continue;
@@ -175,7 +175,7 @@ export const toggleMode = () => {
     const inputFields = [document.getElementById("email-field"), document.getElementById("password-field"), document.getElementById("password-confirmation-field"), 
         document.getElementById("document-title-field")];
 
-    for(let inputField of inputFields) {
+    for(const inputField of inputFields) {
         if (inputField.classList.contains("dark-mode-text-field")) {
             inputField.classList.remove("dark-mode-text-field");
             inputField.classList.add("light-mode-text-field");
@@ -222,15 +222,26 @@ export const changeToSelectedDocument = () => {
 export const showUserPosts = (documentArray) => {
 
     const documentModal = document.getElementById("all-documents-modal");
-    for(let doc of documentArray) {
-    
+    documentModal.innerHTML = '<button class="button-close dark-mode-button action-button">⨉</button>';
+
+    for(const [index, value] of documentArray.entries()) {
         const documentAnchor = document.createElement("a");
         documentAnchor.href = "#";
+        documentAnchor.id = index;
         documentAnchor.onclick = async () => {
-
+            //TODO  
         }
+        documentAnchor.innerText = value.title;
+    
+        documentModal.appendChild(documentAnchor);
 
+        if(index !== documentArray.length - 1) {
+            documentModal.appendChild(document.createElement("hr"));
+        }
     }
+    
 
+    documentModal.classList.remove("hidden");
+    hideMainContentAndShowOverlay();
 }
 
