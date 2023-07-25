@@ -219,9 +219,18 @@ export const changeToSelectedDocument = () => {
 
 }
 
-export const showUserPosts = (postArray) => {
+export const showUserPosts = (documentArray) => {
 
+    const documentModal = document.getElementById("all-documents-modal");
+    for(let doc of documentArray) {
     
+        const documentAnchor = document.createElement("a");
+        documentAnchor.href = "#";
+        documentAnchor.onclick = async () => {
+
+        }
+
+    }
 
 }
 

@@ -418,3 +418,21 @@ light-user-modal-title {
     background-color: #D0D0D7;
 }
 
+.document-modal {
+    max-height: calc(100vh - 210px);
+    overflow-y: auto;
+}
+
+.document-modal hr {
+    width : 97%;
+    color : #2C3138;
+}
+
+.document-modal a:link {
+  text-decoration : none;
+}
+
+.document-modal a:visited {
+  text-decoration : none;
+}
+

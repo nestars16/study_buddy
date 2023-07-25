@@ -231,13 +231,7 @@ export const fetchUserPosts  = async () => {
 
     const cookiesObject = getCookiesObject();
 
-    const response = await fetch("/fetch_posts", {
-        method : "POST",
-        headers : {
-            "Content-Type" : "application/json"
-        },
-        body : JSON.stringify({unique_id : cookiesObject.session_id, text : null})
-    });
+    const response = await fetch("/fetch_posts");
 
     if (response.status != 200) {
         open_external_error_modal(response, await response.text());
