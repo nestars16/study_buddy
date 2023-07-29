@@ -1,19 +1,19 @@
 use axum::{
-    routing::{get, post,put},
+    routing::{get, post, put},
     Router, Server,
 };
-use tower_http::services::ServeDir;
 use study_buddy::users;
+use tower_http::services::ServeDir;
 
-//TODO Better endpoints - Elaboration in main
-//TODO file navigation
-//TODO vim editor settings for textarea possibly
+//TODO REFACTORING
+
+//TODO better button delay on frontend
 //TODO Rate limiting
 //TODO google auth
-//TODO find a way to not always create a client every endpoint
+//TODO find a way to not always create a db client every endpoint
+//TODO Remember me button
 
 //TODO possible async problem with the parsing of markdown??
-//TODO better button delay on frontend
 //TODO add timeout to connections
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -29,9 +29,9 @@ async fn main() -> std::io::Result<()> {
         .route("/create_user", post(users::create_user))
         .route("/log_in", post(users::log_in))
         .route("/log_out", post(users::log_out))
-        .route("/create_post", post(users::create_post)) 
-        .route("/save", put(users::save_post)) 
-        .route("/fetch_posts", get(users::fetch_posts))
+        .route("/create_document", post(users::create_post))
+        .route("/save", put(users::save_post))
+        .route("/fetch_documents", get(users::fetch_posts))
         .route("/fetch_content", get(users::fetch_post_content)) //make this get
         .nest_service("/static", ServeDir::new("static"));
 

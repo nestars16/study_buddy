@@ -1,5 +1,5 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers, openModal, closeModal, toggleMode, openDocumentTitleModal, showUserPosts} from './editorActions.js'
-import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, LogOut, createPost, fetchUserPosts} from './api.js'
+import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, LogOut, createDocument, fetchUserDocuments,fetchCurrentDocumentContent} from './api.js'
 
 "use strict";
 
@@ -29,10 +29,9 @@ let refreshMathTexCounter = 10;
         const showAllDocumentsButton = document.getElementById("all-documents");
 
         showAllDocumentsButton.onclick = async () => {
-            currentDocuments = await fetchUserPosts();
+            currentDocuments = await fetchUserDocuments();
 
-            console.log(currentDocuments);
-            showUserPosts(currentDocuments);
+            showUserPosts(currentDocuments,currentMode,fetchCurrentDocumentContent);
         }
 
         addButton.onclick = () => {
@@ -49,8 +48,7 @@ let refreshMathTexCounter = 10;
                 return;
             }
 
-            await createPost(document.getElementById("document-title-field").value);
-
+            await createDocument(document.getElementById("document-title-field").value);
         }
 
         submitButton.onclick = async (event) => {
@@ -75,6 +73,7 @@ let refreshMathTexCounter = 10;
         }
 
         for (let button of closeModalButtons) {
+            console.log(button);
             button.onclick = () => {
                 closeModal(display);
             }

@@ -1,12 +1,13 @@
 use axum::{
     extract::{
-        ws::{Message, WebSocket}, WebSocketUpgrade,
+        ws::{Message, WebSocket},
+        WebSocketUpgrade,
     },
     response::{Html, IntoResponse, Json, Response},
 };
 use serde::{Deserialize, Serialize};
+use std::convert::Infallible;
 use tokio::fs::read_to_string;
-
 
 pub async fn get_root() -> Html<String> {
     Html(read_to_string("static/html/index.html").await.unwrap())
@@ -18,7 +19,6 @@ pub async fn refresh_file(ws: WebSocketUpgrade) -> Response {
 
 pub async fn modify_md_file_state(mut socket: WebSocket) {
     while let Some(new_md_file_state) = socket.recv().await {
-
         let new_md_file_state = if let Ok(file_state) = new_md_file_state {
             file_state
         } else {
@@ -26,7 +26,11 @@ pub async fn modify_md_file_state(mut socket: WebSocket) {
         };
 
         if let Message::Text(file_state) = new_md_file_state {
-            if socket.send(Message::Text(crate::parse_markdown_file(&file_state))).await.is_err() {
+            if socket
+                .send(Message::Text(crate::parse_markdown_file(&file_state)))
+                .await
+                .is_err()
+            {
                 return;
             }
         }
@@ -39,44 +43,21 @@ pub struct PDFDownloadRequest {
     css: String,
 }
 
-
 #[derive(Serialize, Deserialize)]
 struct DataFields {
-    url : String
+    url: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ApiResponse {
-    success : bool,
-    data : DataFields
+    success: bool,
+    data: DataFields,
 }
-
-pub struct ReqwestWrapper(reqwest::Error);
-
-impl From<reqwest::Error> for ReqwestWrapper {
-    fn from(value: reqwest::Error) -> Self {
-        ReqwestWrapper(value)
-    }
-}
-
-impl IntoResponse for ReqwestWrapper{
-    fn into_response(self) -> Response {
-
-        let status_code = match self.0.status() {
-            Some(code) => code,
-            None => axum::http::StatusCode::INTERNAL_SERVER_ERROR,
-        };
-
-        (status_code, self.0.to_string()).into_response() 
-
-    }
-}
-
 
 #[axum_macros::debug_handler]
 pub async fn download_current_markdown(
     Json(html_json_payload): Json<PDFDownloadRequest>,
-) -> Result<Json<ApiResponse>, ReqwestWrapper> {
+) -> Result<Json<ApiResponse>, crate::StudyBuddyError> {
     println!("{:?}", html_json_payload);
 
     #[derive(Serialize, Debug, Default)]
@@ -134,8 +115,6 @@ pub async fn download_current_markdown(
     //Make POST request
 
     let client = reqwest::Client::new();
-
-    //TODO Error handling
 
     let api_response = client
         .post(api_url)

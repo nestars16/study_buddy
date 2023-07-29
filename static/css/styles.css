@@ -432,6 +432,22 @@ light-user-modal-title {
   text-decoration : none;
 }
 
+.dark-mode-document-link {
+    color : #FAFAFA
+}
+
+.dark-mode-document-link:visited {
+    color : #FAFAFA
+}
+
+.light-mode-document-link {
+    color : black;
+}
+
+.light-mode-document-link:visited {
+    color : black;
+}
+
 .document-modal a:visited {
   text-decoration : none;
 }

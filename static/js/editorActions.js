@@ -104,10 +104,12 @@ export const closeModal = () => {
     const confirmPassword = document.getElementById("password-confirmation-field");
     const errorMessage = document.getElementById("modal-error");
     const titleModal = document.getElementById("user-document-title-modal");
+    const allDocumentsModal = document.getElementById("all-documents-modal");
 
     titleModal.classList.add("hidden");
     display.classList.remove("hidden");
     editor.classList.remove("hidden");
+    allDocumentsModal.classList.add("hidden");
 
     overlay.classList.add("hidden");
     modal.classList.add("hidden");
@@ -215,22 +217,49 @@ export const toggleMode = () => {
     return currentMode;
 }
 
-export const changeToSelectedDocument = () => {
+const changeToSelectedDocument = async (event, fetchFunction,documentArray) => {
 
+    const arrayId = event.target.id;
+    const {document_id, title} = documentArray[arrayId];
+    document.getElementById("document-title").innerText = title; 
+
+    const editor = document.getElementById("editor");
+    const response = await fetchFunction(document_id);
+
+    editor.value = response; 
+
+    document.getElementById("editor").dispatchEvent(new Event('input', { bubbles: true }));
+    document.getElementById("document-close-button").click();
 }
 
-export const showUserPosts = (documentArray) => {
+export const showUserPosts = (documentArray, currentMode, fetchFunction) => {
 
-    const documentModal = document.getElementById("all-documents-modal");
-    documentModal.innerHTML = '<button class="button-close dark-mode-button action-button">⨉</button>';
+    const documentModal = document.getElementById("document-section");
+    documentModal.innerHTML = '';
 
     for(const [index, value] of documentArray.entries()) {
+
         const documentAnchor = document.createElement("a");
         documentAnchor.href = "#";
         documentAnchor.id = index;
-        documentAnchor.onclick = async () => {
-            //TODO  
+
+        let classListName;
+
+        switch(currentMode) {
+            case "dark" :
+                classListName = "dark-mode-document-link";
+                break;
+            case "light":
+                classListName = "light-mode-document-link";
+                break;
         }
+
+        documentAnchor.classList.add(classListName)
+
+        documentAnchor.onclick = (event) => {
+            changeToSelectedDocument(event,fetchFunction,documentArray);
+        }
+
         documentAnchor.innerText = value.title;
     
         documentModal.appendChild(documentAnchor);
@@ -238,10 +267,11 @@ export const showUserPosts = (documentArray) => {
         if(index !== documentArray.length - 1) {
             documentModal.appendChild(document.createElement("hr"));
         }
+
     }
     
 
-    documentModal.classList.remove("hidden");
+    document.getElementById("all-documents-modal").classList.remove("hidden");
     hideMainContentAndShowOverlay();
 }
 

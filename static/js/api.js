@@ -198,11 +198,11 @@ export const LogOut = async () => {
     location.reload();
 }
 
-export const createPost = async (title) => {
+export const createDocument = async (title) => {
 
     const cookiesObject = getCookiesObject();
 
-    const response = await fetch("/create_post", {
+    const response = await fetch("/create_document", {
         method : "POST",
         headers : {
             "Content-Type" : "application/json"
@@ -227,9 +227,9 @@ export const createPost = async (title) => {
     overlay.classList.add("hidden");
 }
 
-export const fetchUserPosts  = async () => {
+export const fetchUserDocuments  = async () => {
 
-    const response = await fetch("/fetch_posts", {
+    const response = await fetch("/fetch_documents", {
         method : "GET",
         credentials : "include"
     });
@@ -242,5 +242,21 @@ export const fetchUserPosts  = async () => {
     return await response.json();
 }
 
+export const fetchCurrentDocumentContent = async (doc_id) => {
+
+    const URL = `/fetch_content?document_id=${doc_id}`;
+
+    const response = await fetch(URL, {
+        method : "GET",
+        credentials : "include"
+    });
+
+    if (response.status != 200) {
+        open_external_error_modal(response, await response.text());
+        return;
+    }
+
+    return await response.json();
+}
 
 

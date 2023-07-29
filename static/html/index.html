@@ -79,14 +79,16 @@
                 <p id="error-message" class="error-message"></p>
             </section>
             <section id="user-document-title-modal" class="modal title-modal dark-mode-modal hidden">
-                <button class="button-close action-button">⨉</button>
+                <button class="button-close action-button dark-mode-button">⨉</button>
                 <form id="document-title-form">
                     <input id="document-title-field" type="text" class="dark-mode-text-field" placeholder="Enter the title of your document" required>
                     <input id="document-title-submit" type="submit"  class="action-button submit-button dark-mode-button" form="document-title-form" value="Submit">
                 </form>
             </section>
             <section id="all-documents-modal" class="modal document-modal dark-mode-modal hidden">
-                <button class="button-close dark-mode-button action-button">⨉</button>
+                <button id="document-close-button" class="button-close dark-mode-button action-button">⨉</button>
+                <article id="document-section">
+                </article>
             </section>
             <section id="markdown-display" class="markdown-display">
             </section>

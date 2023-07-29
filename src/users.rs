@@ -1,54 +1,82 @@
-use postgrest::Postgrest;
 use axum::{
     extract::Query,
+    http::{header, StatusCode},
+    response::{IntoResponse, Response},
     Json,
-    response::{Response, IntoResponse},
-    http::{StatusCode,header}
 };
+use postgrest::Postgrest;
 
-use serde::{Serialize,Deserialize};
-use bcrypt::{DEFAULT_COST, hash, verify};
-use axum_extra::extract::cookie::{CookieJar,Cookie};
+use crate::StudyBuddyError;
+use axum_extra::extract::cookie::CookieJar;
+use bcrypt::{hash, verify, DEFAULT_COST};
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentUser {
-    email : String,
+    email: String,
     password: String,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct UuidJson {
     unique_id: uuid::Uuid,
-    text : Option<String>
+    text: Option<String>,
 }
 
-#[derive(Serialize, Deserialize,Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct User {
-    id : uuid::Uuid,
+    id: uuid::Uuid,
     email: String,
-    password : String,
-    session_id : Option<uuid::Uuid>,
+    password: String,
+    session_id: Option<uuid::Uuid>,
 }
 
 #[derive(Serialize, Clone, Debug)]
 pub struct Document {
-    user_id : uuid::Uuid,
-    title : String,
+    user_id: uuid::Uuid,
+    title: String,
     content: String,
-    document_id : uuid::Uuid,
+    document_id: uuid::Uuid,
 }
 
-
 impl Document {
-    fn new(user_id : uuid::Uuid, title : String)  -> Self {
-        Document{ user_id, title, content: String::new(), document_id : uuid::Uuid::new_v4()}
+    fn new(user_id: uuid::Uuid, title: String) -> Self {
+        Document {
+            user_id,
+            title,
+            content: String::new(),
+            document_id: uuid::Uuid::new_v4(),
+        }
     }
 }
 
 impl User {
-    fn new(email : String, password:  String) -> Self {
+    fn new(email: String, password: String) -> Self {
         let password = hash(password, DEFAULT_COST).expect("All passwords should hash");
-        User{id : uuid::Uuid::new_v4(),email,password, session_id : Some(uuid::Uuid::new_v4()) }
+        User {
+            id: uuid::Uuid::new_v4(),
+            email,
+            password,
+            session_id: Some(uuid::Uuid::new_v4()),
+        }
+    }
+
+    async fn validate_user<T>(
+        client: &Postgrest,
+        table_name: &str,
+        (field, equal): (&str, &str),
+    ) -> Result<T, StudyBuddyError>
+    where
+        T: DeserializeOwned,
+    {
+        Ok(client
+            .from(table_name)
+            .eq(field, equal)
+            .execute()
+            .await?
+            .error_for_status()?
+            .json()
+            .await?)
     }
 }
 
@@ -64,148 +92,91 @@ impl From<User> for String {
     }
 }
 
-pub enum UserCreationError {
-    EmailAlreadyInUse
-}
-
-pub enum UserLogInError {
-    NoMatchingRecord,
-    IncorrectPasswordOrEmail,
-}
-
-pub enum UserRequestResponse<ErrorT>{
-    Success(uuid::Uuid),
-    Fail(ErrorT)
-}
-
-impl IntoResponse for UserRequestResponse<UserCreationError>{
-    fn into_response(self) -> axum::response::Response {
-
-        match self {
-            Self::Success(id)=>  {
-
-                let headers = [
-                    (header::SET_COOKIE, format!("session_id={id}")),
-                ];
-
-                (StatusCode::CREATED,headers,"Created user and instantied user session").into_response()    
-            }
-            Self::Fail(error) => {
-                match error {
-                    UserCreationError::EmailAlreadyInUse => (StatusCode::CONFLICT, "This email is already in use").into_response(),
-                }
-            }
-        }
-    }
-}
-
-impl IntoResponse for UserRequestResponse<UserLogInError> {
-    fn into_response(self) -> axum::response::Response {
-        match self {
-            Self::Success(id)=>  {
-
-                let headers = [
-                    (header::SET_COOKIE, format!("session_id={id}")),
-                ];
-
-                (StatusCode::OK,headers,"Created user and instantied user session").into_response()    
-            }
-            Self::Fail(error) => {
-                let error_message = match error {
-                    UserLogInError::NoMatchingRecord => "No matching user with provided email",
-                    UserLogInError::IncorrectPasswordOrEmail => "Incorrect Password or Email",
-                };
-
-                (StatusCode::UNAUTHORIZED,error_message).into_response()
-            }
-        }
-    }
-}
-
 #[axum_macros::debug_handler]
-pub async fn create_user(Json(user_payload): Json<SentUser>) -> Result<UserRequestResponse<UserCreationError>, crate::ReqwestWrapper> {
+pub async fn create_user(Json(user_payload): Json<SentUser>) -> Result<Response, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let client = 
-        Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
-        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
-
-    let users_with_this_email : Vec<User> = 
-        client
-        .from("users")
-        .eq("email", user_payload.email.clone())
-        .execute()
+    if User::validate_user::<Vec<User>>(&client, "users", ("email", &user_payload.email))
         .await?
-        .error_for_status()?
-        .json()
-        .await?;
+        .first()
+        .is_some()
+    {
+        return Err(StudyBuddyError::EmailAlreadyInUse);
+    }
 
-    if users_with_this_email.is_empty() {
+    let new_user = User::new(user_payload.email, user_payload.password);
+    let session_id = new_user
+        .session_id
+        .expect("Newly created user has guaranteed session_id")
+        .to_string()
+        .clone();
 
-        let new_user = User::new(user_payload.email, user_payload.password);
-
-        let newly_created_user = client
+    client
         .from("users")
         .insert(new_user)
         .execute()
         .await?
-        .error_for_status()?
-        .json::<Vec<User>>()
-        .await?
-        .pop()
-        .expect("Creation must be Successful at this point");
+        .error_for_status()?;
 
-        Ok(UserRequestResponse::Success(newly_created_user.session_id.expect("Newly created user always has session_id")))
-    } else {
-        Ok(UserRequestResponse::Fail(UserCreationError::EmailAlreadyInUse))
-    }
+    let headers = [(header::SET_COOKIE, format!("session_id={}", session_id))];
 
+    Ok((
+        StatusCode::CREATED,
+        headers,
+        "Created user and instantied user session",
+    )
+        .into_response())
 }
 
-pub async fn log_in(Json(user_payload) : Json<SentUser>) -> Result<UserRequestResponse<UserLogInError>, crate::ReqwestWrapper>{
+#[axum_macros::debug_handler]
+pub async fn log_in(Json(user_payload): Json<SentUser>) -> Result<Response, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let client = 
-        Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
-        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+    let mut user_with_email =
+        User::validate_user::<Vec<User>>(&client, "users", ("email", &user_payload.email))
+            .await?
+            .into_iter()
+            .next()
+            .ok_or_else(|| StudyBuddyError::NoMatchingUserRecord)?;
 
-    let mut users_with_this_email : Vec<User> = 
-        client
+    if !verify(user_payload.password, &user_with_email.password).unwrap() {
+        return Err(StudyBuddyError::WrongEmailOrPassword);
+    }
+
+    let new_session_id = uuid::Uuid::new_v4();
+    user_with_email.session_id = Some(new_session_id);
+
+    let update_param_string = format!("{{ \"session_id\" : \"{}\"}}", new_session_id);
+
+    client
         .from("users")
-        .eq("email", user_payload.email)
+        .eq("id", user_with_email.id.to_string())
+        .update(update_param_string)
         .execute()
         .await?
-        .error_for_status()?
-        .json()
-        .await?;
+        .error_for_status()?;
 
-    if let Some(mut user_with_email) = users_with_this_email.pop() {
-        if verify(user_payload.password, &user_with_email.password).unwrap() {
+    let headers = [(header::SET_COOKIE, format!("session_id={}", new_session_id))];
 
-            user_with_email.session_id = Some(uuid::Uuid::new_v4());
-
-            let update_param_string = format!("{{ \"session_id\" : \"{}\"}}", user_with_email.session_id.expect("session_id is guaranteed to be set"));
-
-            client
-                .from("users")
-                .eq("id", user_with_email.id.to_string())
-                .update(update_param_string)
-                .execute()
-                .await?
-                .error_for_status()?;
-
-            Ok(UserRequestResponse::Success(user_with_email.session_id.expect("Session_id guaranteed to be set")))
-                
-        } else {
-            Ok(UserRequestResponse::Fail(UserLogInError::IncorrectPasswordOrEmail))
-        }
-    } else {
-        Ok(UserRequestResponse::Fail(UserLogInError::NoMatchingRecord))
-    }
+    Ok((
+        StatusCode::OK,
+        headers,
+        "Created user and instantied user session",
+    )
+        .into_response())
 }
 
-pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response, crate::ReqwestWrapper>{
-
-    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
-        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+pub async fn log_out(Json(user_session_id): Json<UuidJson>) -> Result<Response, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
     //Unique id in this case is the session id to invalidate in the database
     client
@@ -216,33 +187,38 @@ pub async fn log_out(Json(user_session_id) : Json<UuidJson>) -> Result<Response,
         .await?
         .error_for_status()?;
 
-    let headers = [
-        (header::SET_COOKIE, format!("session_id=''; expires=Thu, 01 Jan 1970 00:00:00 GMT")),
-    ];
+    let headers = [(
+        header::SET_COOKIE,
+        format!("session_id=''; expires=Thu, 01 Jan 1970 00:00:00 GMT"),
+    )];
 
-    Ok((StatusCode::OK,headers,"Logged out and invalidated user session").into_response())
+    Ok((
+        StatusCode::OK,
+        headers,
+        "Logged out and invalidated user session",
+    )
+        .into_response())
 }
 
-pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Result<Json<UuidJson>,Response>, crate::ReqwestWrapper> {
+pub async fn create_post(
+    Json(user_request_info): Json<UuidJson>,
+) -> Result<Json<UuidJson>, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
-        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+    let valid_user = User::validate_user::<Vec<User>>(
+        &client,
+        "users",
+        ("session_id", &user_request_info.unique_id.to_string()),
+    )
+    .await?
+    .into_iter()
+    .next()
+    .ok_or_else(|| StudyBuddyError::NoMatchingUserRecord)?;
 
-    let user_with_session = client
-        .from("users")
-        .eq("session_id", user_request_info.unique_id.to_string())
-        .execute()
-        .await?
-        .error_for_status()?
-        .json::<Vec<User>>()
-        .await?
-        .pop();
-
-
-    if let Some(valid_user)  = user_with_session {
-
-        if let Some(post_title) = user_request_info.text {
-
+    if let Some(post_title) = user_request_info.text {
         let new_document = Document::new(valid_user.id, post_title);
 
         client
@@ -252,159 +228,143 @@ pub async fn create_post(Json(user_request_info) : Json<UuidJson>)  -> Result<Re
             .await?
             .error_for_status()?;
 
-            return Ok(Ok(Json(UuidJson{unique_id: new_document.document_id , text : Some(new_document.title)})));
-        } 
-
-        Ok(Err((StatusCode::BAD_REQUEST, "The request doesn't contain a document title").into_response()))
-
+        return Ok(Json(UuidJson {
+            unique_id: new_document.document_id,
+            text: Some(new_document.title),
+        }));
     } else {
-
-        Ok(Err((StatusCode::UNAUTHORIZED, "Invalid user session").into_response()))
+        Err(StudyBuddyError::IncompleteRequest)
     }
-
 }
 
-#[derive(Deserialize,Serialize)]
+#[derive(Deserialize, Serialize)]
 pub struct DatabaseDocumentRecords {
-    document_id : uuid::Uuid,
-    title : String,
+    document_id: uuid::Uuid,
+    title: String,
 }
 
-pub async fn fetch_posts(jar : CookieJar) -> Result<Result<Json<Vec<DatabaseDocumentRecords>>,Response>, crate::ReqwestWrapper>{
+pub async fn fetch_posts(
+    jar: CookieJar,
+) -> Result<Json<Vec<DatabaseDocumentRecords>>, StudyBuddyError> {
 
     let user_session_id = if let Some(id) = jar.get("session_id") {
         id.value()
     } else {
-        return Ok(Err((StatusCode::UNAUTHORIZED, "Invalid user session").into_response()));
+        return Err(StudyBuddyError::InvalidUserSession);
     };
 
-    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
-        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let user = client
-        .from("users")
-        .eq("session_id", user_session_id.to_string())
+
+    let valid_user = User::validate_user::<Vec<User>>(
+        &client,
+        "users",
+        ("session_id", user_session_id),
+    )
+    .await?
+    .into_iter()
+    .next()
+    .ok_or_else(|| StudyBuddyError::InvalidUserSession)?;
+
+    let user_posts = client
+        .from("documents")
+        .eq("user_id", valid_user.id.to_string())
+        .select("title, document_id")
         .execute()
         .await?
         .error_for_status()?
-        .json::<Vec<User>>()
-        .await?
-        .pop();
+        .json::<Vec<DatabaseDocumentRecords>>()
+        .await?;
 
-    if let Some(user_with_session) = user {
-
-        let user_posts = client
-            .from("documents")
-            .eq("user_id", user_with_session.id.to_string())
-            .select("title, document_id")
-            .execute()
-            .await?
-            .error_for_status()?
-            .json::<Vec<DatabaseDocumentRecords>>()
-            .await?;
-
-        Ok(Ok(Json(user_posts)))
-    }else {
-         Ok(Err((StatusCode::UNAUTHORIZED, "Invalid user session").into_response()))
-    }
+    Ok(Json(user_posts))
 }
 
-
-#[derive(Serialize,Deserialize)]
-pub struct SavePostRequest
-{
-    user_id : uuid::Uuid,
-    document_id : uuid::Uuid,
-    text : String,
+#[derive(Serialize, Deserialize)]
+pub struct SavePostRequest {
+    user_session_id: uuid::Uuid,
+    document_id: uuid::Uuid,
+    text: String,
 }
 
-pub async fn save_post(Json(user_save_request) : Json<SavePostRequest>)  -> Result<Response, crate::ReqwestWrapper>{
+pub async fn save_post(
+    Json(user_save_request): Json<SavePostRequest>,
+) -> Result<Response, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
-        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+    if User::validate_user::<Vec<User>>(&client, "users", ("session_id", &user_save_request.user_session_id.to_string()))
+    .await?
+    .first()
+    .is_none(){
+        return Err(StudyBuddyError::InvalidUserSession)
+    };
 
-    let user_with_session = client
-        .from("users")
-        .eq("session_id", user_save_request.user_id.to_string())
+    let update_string = format!("{{ \"content\" : \"{}\" }}", user_save_request.text);
+
+    client
+        .from("documents")
+        .eq("document_id", user_save_request.document_id.to_string())
+        .update(update_string)
         .execute()
         .await?
-        .error_for_status()?
-        .json::<Vec<User>>()
-        .await?
-        .pop();
+        .error_for_status()?;
 
-    if let Some(valid_user)  = user_with_session {
-
-        let update_string = format!("{{ \"content\" : \"{}\" }}", user_save_request.text);
-
-        client
-            .from("documents")
-            .eq("document_id", user_save_request.document_id.to_string())
-            .update(update_string)
-            .execute()
-            .await?
-            .error_for_status()?;
-
-        Ok((StatusCode::OK, "Post contents saved succesfully").into_response())
-
-    } else {
-        Ok((StatusCode::UNAUTHORIZED, "Invalid user session").into_response())
-    }
+    Ok((StatusCode::OK, "Post contents saved succesfully").into_response())
 }
 
 #[derive(Deserialize)]
 pub struct DocumentId {
-    document_id : String
+    document_id: String,
 }
 
 #[derive(Deserialize, Serialize)]
 pub struct DocumentContent {
-    content : String
+    content: String,
 }
 
-pub async fn fetch_post_content(jar : CookieJar, document_id : Query<DocumentId>) -> Result<Result<Json<String>,Response>, crate::ReqwestWrapper>{
-
+pub async fn fetch_post_content(
+    jar: CookieJar,
+    document_id: Query<DocumentId>,
+) -> Result<Json<String>, StudyBuddyError> {
     let user_session_id = if let Some(id) = jar.get("session_id") {
         id.value()
     } else {
-        return Ok(Err((StatusCode::UNAUTHORIZED, "Invalid user session").into_response()));
+        return Err(StudyBuddyError::InvalidUserSession);
     };
 
-    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").
-        insert_header("apikey", std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"));
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let user_with_session = client
-        .from("users")
-        .eq("session_id" , user_session_id)
+    if User::validate_user::<Vec<User>>(&client, "users", ("session_id", user_session_id))
+    .await?
+    .first()
+    .is_none(){
+        return Err(StudyBuddyError::InvalidUserSession)
+    };
+
+    let document_lookup = document_id.0;
+
+    let doc_contents = client
+        .from("documents")
+        .eq("document_id", document_lookup.document_id)
+        .select("content")
         .execute()
         .await?
         .error_for_status()?
-        .json::<Vec<User>>()
+        .json::<Vec<DocumentContent>>()
         .await?
         .pop();
 
-    if let Some(valid_user)  = user_with_session {
-
-        let document_lookup = document_id.0;
-
-        let doc_contents = client
-            .from("documents")
-            .eq("document_id" , document_lookup.document_id)
-            .select("content")
-            .execute()
-            .await?
-            .error_for_status()?
-            .json::<Vec<DocumentContent>>()
-            .await?
-            .pop();
-
-        if let Some(document) = doc_contents {
-            Ok(Ok(Json(document.content)))
-        } else {
-            Ok(Err(StatusCode::NOT_FOUND.into_response()))
-        }
-
+    if let Some(document) = doc_contents {
+        Ok(Json(document.content))
     } else {
-        Ok(Err((StatusCode::UNAUTHORIZED, "Invalid user session").into_response()))
+        Err(StudyBuddyError::DocumentNotFound)
     }
 }
