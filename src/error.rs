@@ -3,8 +3,37 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-pub enum StudyBuddyError {
+#[derive(Clone)]
+pub enum StudyBuddySessionError {
     InvalidUserSession,
+    NoSessionId,
+    LookupFailed
+}
+
+impl IntoResponse for StudyBuddySessionError{
+    fn into_response(self) -> Response {
+        match self {
+            StudyBuddySessionError::InvalidUserSession => {
+                (StatusCode::UNAUTHORIZED, "Invalid user session").into_response()
+            },
+            StudyBuddySessionError::NoSessionId => {
+            (StatusCode::UNAUTHORIZED, "No session cookie found").into_response()
+            },
+            StudyBuddySessionError::LookupFailed => {
+            (StatusCode::INTERNAL_SERVER_ERROR, "Lookup Failed").into_response()
+            }
+        }
+    }
+}
+
+impl From<StudyBuddySessionError> for StudyBuddyError {
+    fn from(value: StudyBuddySessionError) -> Self {
+        StudyBuddyError::SessionError(value)
+    }
+}
+
+pub enum StudyBuddyError {
+    SessionError(StudyBuddySessionError),
     NoMatchingUserRecord,
     EmailAlreadyInUse,
     IncompleteRequest,
@@ -22,9 +51,6 @@ impl From<reqwest::Error> for StudyBuddyError {
 impl IntoResponse for StudyBuddyError {
     fn into_response(self) -> Response {
         match self {
-            StudyBuddyError::InvalidUserSession => {
-                (StatusCode::UNAUTHORIZED, "Invalid user session").into_response()
-            }
             StudyBuddyError::WrongEmailOrPassword => {
                 (StatusCode::UNAUTHORIZED, "Invalid email or password").into_response()
             }
@@ -51,7 +77,11 @@ impl IntoResponse for StudyBuddyError {
             }
             StudyBuddyError::DocumentNotFound => {
                 (StatusCode::NO_CONTENT, "Document ID isn't valid").into_response()
+            },
+            StudyBuddyError::SessionError(err) => {
+                err.into_response()
             }
+
         }
     }
 }

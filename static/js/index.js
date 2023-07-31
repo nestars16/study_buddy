@@ -13,6 +13,9 @@ const editor = document.getElementById("editor");
 const display = document.getElementById("markdown-display");  
 let currentDocuments = [];
 let refreshMathTexCounter = 10;
+let currentDocTimeoutId = {
+    current_id : null
+};
 
     const initialSetup = async () => {
 
@@ -30,8 +33,7 @@ let refreshMathTexCounter = 10;
 
         showAllDocumentsButton.onclick = async () => {
             currentDocuments = await fetchUserDocuments();
-
-            showUserPosts(currentDocuments,currentMode,fetchCurrentDocumentContent);
+            showUserPosts(currentDocuments,currentMode,fetchCurrentDocumentContent,currentDocTimeoutId);
         }
 
         addButton.onclick = () => {
@@ -73,7 +75,6 @@ let refreshMathTexCounter = 10;
         }
 
         for (let button of closeModalButtons) {
-            console.log(button);
             button.onclick = () => {
                 closeModal(display);
             }
@@ -105,7 +106,7 @@ let refreshMathTexCounter = 10;
         }
 
         resizeTextarea(editor);
-    }
+}
 
 document.addEventListener("DOMContentLoaded", () => {
 

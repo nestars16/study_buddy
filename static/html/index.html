@@ -11,6 +11,8 @@
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css" integrity="sha384-3UiQGuEI4TTMaFmGIZumfRPtfKQ3trwQE2JgosJxCnGmQpL/lJdjpcHkaaFwHlcI" crossorigin="anonymous">
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.js" integrity="sha384-G0zcxDFp5LWZtDuRMnBkk3EphCK1lhEf4UEyEM693ka574TZGwo4IWwS6QLzM/2t" crossorigin="anonymous"></script>
         <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body);"></script>
+        <script src="static/js/editorActions.js" type="module"></script>
+        <script src="static/js/api.js" type="module"></script>
         <script src="static/js/index.js" type="module"></script>
         <link rel="apple-touch-icon" sizes="76x76" href="static/favicon/apple-touch-icon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="static/favicon/favicon-32x32.png">
@@ -72,7 +74,7 @@
             </section>
             <section class="modal dark-mode-modal hidden">
             </section>
-            <section id="error-modal" class="modal dark-mode-modal hidden">
+            <section id="error-modal" class="modal dark-mode-modal hidden error-modal">
                 <button class="button-close dark-mode-button action-button">⨉</button>
                 <h2 class="user-modal-title dark-user-modal-title">Sorry!😦</h2>
                 <p>There seemed to be an error handling your request</p>

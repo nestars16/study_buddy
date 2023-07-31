@@ -1,3 +1,5 @@
+import { savePost } from "./api.js";
+
 
 export const highlight = (editor, highlightEl) => {
   window.requestAnimationFrame(() => {
@@ -64,7 +66,6 @@ const hideMainContentAndShowOverlay = () => {
 
 export const openDocumentTitleModal = () => {
 
-    const documentBar = document.getElementById("document-bar");
     hideMainContentAndShowOverlay();
 
     const titleModal = document.getElementById("user-document-title-modal");
@@ -217,22 +218,29 @@ export const toggleMode = () => {
     return currentMode;
 }
 
-const changeToSelectedDocument = async (event, fetchFunction,documentArray) => {
+const changeToSelectedDocument = async (event, fetchFunction,documentArray, globalCurrentTimeoutId) => {
+
+    if(globalCurrentTimeoutId.current_id) {
+        debugger;
+        clearInterval(globalCurrentTimeoutId);
+    }
 
     const arrayId = event.target.id;
     const {document_id, title} = documentArray[arrayId];
     document.getElementById("document-title").innerText = title; 
-
     const editor = document.getElementById("editor");
     const response = await fetchFunction(document_id);
-
     editor.value = response; 
-
     document.getElementById("editor").dispatchEvent(new Event('input', { bubbles: true }));
     document.getElementById("document-close-button").click();
+
+    globalCurrentTimeoutId.current_id = setInterval(() => {
+        debugger;
+        savePost(document_id, document.getElementById("editor").value)
+    }, 60000)
 }
 
-export const showUserPosts = (documentArray, currentMode, fetchFunction) => {
+export const showUserPosts = (documentArray, currentMode, fetchFunction, globalCurrentTimeoutId) => {
 
     const documentModal = document.getElementById("document-section");
     documentModal.innerHTML = '';
@@ -257,7 +265,7 @@ export const showUserPosts = (documentArray, currentMode, fetchFunction) => {
         documentAnchor.classList.add(classListName)
 
         documentAnchor.onclick = (event) => {
-            changeToSelectedDocument(event,fetchFunction,documentArray);
+            changeToSelectedDocument(event,fetchFunction,documentArray,globalCurrentTimeoutId);
         }
 
         documentAnchor.innerText = value.title;

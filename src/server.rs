@@ -3,11 +3,28 @@ use axum::{
         ws::{Message, WebSocket},
         WebSocketUpgrade,
     },
-    response::{Html, IntoResponse, Json, Response},
+    response::{Html, Json, Response},
 };
 use serde::{Deserialize, Serialize};
-use std::convert::Infallible;
 use tokio::fs::read_to_string;
+use sqlx::{PgPool,
+postgres::PgPoolOptions};
+
+pub struct AppState {
+    pool : PgPool, 
+}
+
+impl AppState {
+    pub async fn new() -> Self{
+        AppState { pool: 
+            PgPoolOptions::new()
+                .max_connections(8)
+                .connect(&std::env::var("SUPA_BASE_POOL_URL").expect("Database URL must be set"))
+                .await
+                .expect("Failure of creation of AppState is reason enough to crash")
+        }
+    }
+}
 
 pub async fn get_root() -> Html<String> {
     Html(read_to_string("static/html/index.html").await.unwrap())
@@ -88,17 +105,17 @@ pub async fn download_current_markdown(
 
     let css = if let Ok(style) = css {
         match style {
-            StyleType::Dark => include_str!("../static/templates/pdf.css"),
-            StyleType::Light => include_str!("../static/templates/lightpdf.css"),
+            StyleType::Dark => include_str!("../templates/pdf.css"),
+            StyleType::Light => include_str!("../templates/lightpdf.css"),
         }
     } else {
-        include_str!("../static/templates/pdf.css")
+        include_str!("../templates/pdf.css")
     }
     .to_string();
 
     let html = format!("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><link href=\"https://pvinis.github.io/iosevka-webfont/3.4.1/iosevka.css\" rel=\"stylesheet\"/><link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/katex@0.16.7/dist/katex.min.css\" integrity=\"sha384-3UiQGuEI4TTMaFmGIZumfRPtfKQ3trwQE2JgosJxCnGmQpL/lJdjpcHkaaFwHlcI\" crossorigin=\"anonymous\"/><title>StudyBuddyDownload</title></head><body><div>{}</div></body></html>",html_json_payload.html);
 
-    let js = include_str!("../static/templates/pdf.js").to_string();
+    let js = include_str!("../templates/pdf.js").to_string();
 
     let api_request = ApiRequest { html, css, js };
     let api_url = "https://api.pdfendpoint.com/v1/convert";

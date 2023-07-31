@@ -320,10 +320,20 @@ light-user-modal-title {
 }
 
 .error-message {
-    text-align: center;
     color : red;
     font-weight: bold;
+    word-wrap: break-word;
 }
+
+.error-modal {
+    max-width: 30%;
+}
+
+.error-modal p {
+
+    text-align: center;
+}
+
 .loader {
           width: 48px;
           height: 48px;
