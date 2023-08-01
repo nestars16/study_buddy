@@ -14,9 +14,9 @@ use axum::{
     Json,
 };
 use bcrypt::{hash, verify, DEFAULT_COST};
-use serde::{Deserialize, Serialize};
-use sqlx::{postgres::PgPool, FromRow};
-use std::str::FromStr;
+use postgrest::Postgrest;
+use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use sqlx::{postgres::PgPool, Connection, FromRow, PgConnection};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tower_cookies::{Cookie, Cookies};
@@ -71,26 +71,22 @@ impl User {
         }
     }
 
-    async fn validate_user_new<'a ,T>(
+    async fn retrieve_with_session(
         pool: &PgPool,
-        query_string : &'a str,
-        equal: T
-    ) -> Result<Option<User>, StudyBuddyError> 
-    where T: sqlx::Type<sqlx::Postgres> + sqlx::Encode<'a, sqlx::Postgres> + std::marker::Send + 'a{
+        field : &str,
+        session_id: &uuid::Uuid,
+    ) -> Result<Option<User>, StudyBuddyError>{
 
-        Ok(sqlx::query_as::<_, User>(&query_string)
-            .bind(equal)
-            .fetch_optional(pool)
-            .await?)
+
+
+        Ok(None)
     }
 
-    fn create_validate_user_string(comparison_field : &str) -> String {
-        format!("SELECT *
-                 FROM users
-                 WHERE {comparison_field} = $1
-                ")
-    }
+    async fn retrieve_with_email(pool: &PgPool, email: &str) -> Result<Option<User>,StudyBuddyError>{
 
+
+        Ok(None)        
+    }
 }
 
 impl From<Document> for String {
@@ -117,7 +113,7 @@ impl UserCtx {
 }
 
 pub async fn mw_user_ctx_resolver<B>(
-    State(app_state): State<Arc<Mutex<AppState>>>,
+    State(app_state) : State<Arc<Mutex<AppState>>>,
     cookies: Cookies,
     mut req: Request<B>,
     next: Next<B>,
@@ -127,22 +123,21 @@ pub async fn mw_user_ctx_resolver<B>(
     let ctx_result = match session_id.ok_or_else(|| StudyBuddySessionError::NoSessionId) {
         Ok(session_id) => {
 
-            {
-                let query_string = User::create_validate_user_string("session_id");
-                let session_id = uuid::Uuid::from_str(&session_id).map_err(|_|StudyBuddySessionError::InvalidUserSession)?;
-                let pool = &app_state.lock().await.pool;
-                User::validate_user_new::<uuid::Uuid>(
-                    pool,
-                    &query_string,
-                    session_id
-                )
+            let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1")
+                .insert_header(
+                    "apikey",
+                    std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+                );
+
+            User::validate_user::<Vec<User>>(&client, "users", ("session_id", &session_id))
                 .await
-                .or_else(|_| Err(StudyBuddySessionError::LookupFailed))?
+                .map_err(|_| StudyBuddySessionError::LookupFailed)?
+                .into_iter()
+                .next()
                 .ok_or_else(|| StudyBuddySessionError::InvalidUserSession)
-            }
+
 
         }
-
         Err(error) => Err(error),
     };
 
@@ -178,12 +173,17 @@ pub async fn create_user(
     State(app_state): State<Arc<Mutex<AppState>>>,
     Json(user_payload): Json<SentUser>,
 ) -> Result<Response, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let pool = &app_state.lock().await.pool;
-
-    let query_string = User::create_validate_user_string("email");
-    if User::validate_user_new(pool,&query_string,&user_payload.email).await?.is_some() {
-        return Err(StudyBuddyError::EmailAlreadyInUse)
+    if User::validate_user::<Vec<User>>(&client, "users", ("email", &user_payload.email))
+        .await?
+        .first()
+        .is_some()
+    {
+        return Err(StudyBuddyError::EmailAlreadyInUse);
     }
 
     let new_user = User::new(user_payload.email, user_payload.password);
@@ -193,20 +193,17 @@ pub async fn create_user(
 
     let session_id_string = session_id.to_string().clone();
 
-    {
-
-        sqlx::query!(
-            "INSERT INTO users (id, email, password, session_id)
-             VALUES ($1, $2, $3, $4)
-            ",
-            new_user.id,
-            new_user.email,
-            new_user.password,
-            session_id
-        )
-        .execute(pool)
-        .await?;
-    }
+    sqlx::query!(
+        "INSERT INTO users (id, email, password, session_id)
+         VALUES ($1, $2, $3, $4)
+        ",
+        new_user.id,
+        new_user.email,
+        new_user.password,
+        session_id
+    )
+    .execute(&app_state.lock().await.pool)
+    .await?;
 
     let headers = [(
         header::SET_COOKIE,
@@ -226,15 +223,17 @@ pub async fn log_in(
     State(app_state): State<Arc<Mutex<AppState>>>,
     Json(user_payload): Json<SentUser>,
 ) -> Result<Response, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let pool = &app_state.lock().await.pool;
-
-    let query_string = User::create_validate_user_string("email");
-    let mut user_with_email = 
-        User::validate_user_new(pool, &query_string, &user_payload.email)
-        .await?
-        .ok_or_else(|| StudyBuddyError::NoMatchingUserRecord)?;
-
+    let mut user_with_email =
+        User::validate_user::<Vec<User>>(&client, "users", ("email", &user_payload.email))
+            .await?
+            .into_iter()
+            .next()
+            .ok_or_else(|| StudyBuddyError::NoMatchingUserRecord)?;
 
     if !verify(user_payload.password, &user_with_email.password).unwrap() {
         return Err(StudyBuddyError::WrongEmailOrPassword);
@@ -245,13 +244,13 @@ pub async fn log_in(
 
     sqlx::query!(
         "UPDATE users
-            SET session_id = $1
-            WHERE id = $2
+         SET session_id = $1
+         WHERE id = $2
         ",
         new_session_id,
         user_with_email.id
     )
-    .execute(pool)
+    .execute(&app_state.lock().await.pool)
     .await?;
 
     let headers = [(
@@ -271,22 +270,21 @@ pub async fn log_out(
     State(app_state): State<Arc<Mutex<AppState>>>,
     ctx: UserCtx,
 ) -> Result<Response, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
     //Unique id in this case is the session id to invalidate in the database
-    
-    {
-        let pool = &app_state.lock().await.pool;
-
-        sqlx::query!(
-            "UPDATE users
-            SET session_id = NULL
-            WHERE id = $1
-            ",
-            ctx.user_id
-        )
-        .execute(pool)
-        .await?;
-    }
+    sqlx::query!(
+        "UPDATE users
+        SET session_id = NULL
+        WHERE id = $1
+        ",
+        ctx.user_id
+    )
+    .execute(&app_state.lock().await.pool)
+    .await?;
 
     let headers = [(
         header::SET_COOKIE,
@@ -313,21 +311,17 @@ pub async fn create_document(
 ) -> Result<Json<SentDocument>, StudyBuddyError> {
     let new_document = Document::new(ctx.user_id, user_request_info.title);
 
-    {
-        let pool = &app_state.lock().await.pool;
-
-        sqlx::query!(
-            "INSERT INTO documents (user_id, title, content, document_id)
-             VALUES ($1, $2, $3, $4)
-            ",
-            ctx.user_id,
-            new_document.title,
-            new_document.content,
-            new_document.document_id
-        )
-        .execute(pool)
-        .await?;
-    }
+    sqlx::query!(
+        "INSERT INTO documents (user_id, title, content, document_id)
+         VALUES ($1, $2, $3, $4)
+        ",
+        ctx.user_id,
+        new_document.title,
+        new_document.content,
+        new_document.document_id
+    )
+    .execute(&app_state.lock().await.pool)
+    .await?;
 
     Ok(Json(SentDocument {
         unique_id: new_document.document_id,
@@ -335,25 +329,28 @@ pub async fn create_document(
     }))
 }
 
-#[derive(Deserialize, Serialize, FromRow)]
+#[derive(Deserialize, Serialize)]
 pub struct DatabaseDocumentRecords {
     document_id: uuid::Uuid,
     title: String,
 }
 
 pub async fn fetch_posts(
-    State(app_state) : State<Arc<Mutex<AppState>>>,
     ctx: UserCtx,
 ) -> Result<Json<Vec<DatabaseDocumentRecords>>, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let pool = &app_state.lock().await.pool;
-
-    let user_posts = sqlx::query_as::<_,DatabaseDocumentRecords>(
-        "SELECT title, document_id
-        FROM documents
-        WHERE user_id = $1"
-        ).bind(ctx.user_id)
-        .fetch_all(pool)
+    let user_posts = client
+        .from("documents")
+        .eq("user_id", ctx.user_id.to_string())
+        .select("title, document_id")
+        .execute()
+        .await?
+        .error_for_status()?
+        .json::<Vec<DatabaseDocumentRecords>>()
         .await?;
 
     Ok(Json(user_posts))
@@ -366,21 +363,23 @@ pub struct SavePostRequest {
 }
 
 pub async fn save_document(
-    State(app_state) : State<Arc<Mutex<AppState>>>,
     _ctx: UserCtx,
     Json(user_save_request): Json<SavePostRequest>,
 ) -> Result<Response, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let pool = &app_state.lock().await.pool;
+    let update_string = format!("{{ \"content\" : {:?} }}", user_save_request.text);
 
-    sqlx::query!(
-        "UPDATE documents
-         SET content = $1
-         WHERE document_id = $2",
-         user_save_request.text,
-         user_save_request.document_id
-        ).execute(pool)
-        .await?;
+    client
+        .from("documents")
+        .eq("document_id", user_save_request.document_id.to_string())
+        .update(update_string)
+        .execute()
+        .await?
+        .error_for_status()?;
 
     Ok((StatusCode::OK, "Post contents saved succesfully").into_response())
 }
@@ -390,30 +389,30 @@ pub struct DocumentId {
     document_id: String,
 }
 
-#[derive(Deserialize, Serialize, FromRow)]
+#[derive(Deserialize, Serialize)]
 pub struct DocumentContent {
     content: String,
 }
 
 pub async fn fetch_post_content(
-    State(app_state) : State<Arc<Mutex<AppState>>>,
     _ctx: UserCtx,
     Query(document_id): Query<DocumentId>,
 ) -> Result<Json<String>, StudyBuddyError> {
+    let client = Postgrest::new("https://hgioigecbrqawyedynet.supabase.co/rest/v1").insert_header(
+        "apikey",
+        std::env::var("SUPA_BASE_KEY").expect("Database auth needs to be set"),
+    );
 
-    let doc_id = uuid::Uuid::from_str(&document_id.document_id).map_err(|_|StudyBuddyError::DocumentNotFound)?;
-
-    let pool = &app_state.lock().await.pool;
-
-    let doc_contents = sqlx::query_as::<_, DocumentContent>(
-        "SELECT content
-        FROM documents
-        WHERE document_id = $1
-        "
-        )
-        .bind(doc_id)
-        .fetch_optional(pool)
-        .await?;
+    let doc_contents = client
+        .from("documents")
+        .eq("document_id", document_id.document_id)
+        .select("content")
+        .execute()
+        .await?
+        .error_for_status()?
+        .json::<Vec<DocumentContent>>()
+        .await?
+        .pop();
 
     if let Some(document) = doc_contents {
         Ok(Json(document.content))

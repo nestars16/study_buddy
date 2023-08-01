@@ -1,44 +1,47 @@
-use tower::{ServiceBuilder,
-    timeout::TimeoutLayer,
-    buffer::BufferLayer};
-use std::time::Duration;
 use axum::{
     error_handling::HandleErrorLayer,
-    BoxError,
     http::StatusCode,
     middleware,
     routing::{get, post, put},
-    Router, Server,
+    BoxError, Router, Server,
 };
+use std::{sync::Arc, time::Duration};
+use tower::{buffer::BufferLayer, timeout::TimeoutLayer, ServiceBuilder};
 
-use tower::limit::rate::RateLimitLayer;
 use study_buddy::users;
-use tower_http::services::ServeDir;
+use tokio::sync::Mutex;
+use tower::limit::rate::RateLimitLayer;
 use tower_cookies::CookieManagerLayer;
+use tower_http::services::ServeDir;
 
-//TODO JAVASCRIPT REFACTORING
+//TODO JAVASCRIPT REFACTORING - use the dialog for modals
+
+//TODO test create user and fetch content
+
 
 //TODO better button delay on frontend
-//TODO find a way to not always create a db client every endpoint
 //TODO Remember me button
 //TODO Forgot your password button
 
+//TODO??? maybe websockets problem
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
 
-    study_buddy::server::AppState::new().await;
+    let app_state = Arc::new(Mutex::new(study_buddy::server::AppState::new().await));
 
     let auth_needed_routes = Router::new()
-        .route("/log_out", post(users::log_out)) 
-        .route("/create_document", post(users::create_document)) 
-        .route("/save", put(users::save_document)) 
+        .route("/log_out", post(users::log_out))
+        .route("/create_document", post(users::create_document))
+        .route("/save", put(users::save_document))
         .route("/fetch_documents", get(users::fetch_posts))
         .route("/fetch_content", get(users::fetch_post_content))
-        .layer(middleware::from_fn(users::mw_user_ctx_resolver))
+        .layer(middleware::from_fn_with_state(
+            app_state.clone(),
+            users::mw_user_ctx_resolver,
+        ))
         .layer(CookieManagerLayer::new());
-
 
     let router = Router::new()
         .route("/", get(study_buddy::server::get_root))
@@ -53,16 +56,17 @@ async fn main() -> std::io::Result<()> {
         .nest_service("/static", ServeDir::new("static"))
         .layer(
             ServiceBuilder::new()
-             .layer(HandleErrorLayer::new(|err: BoxError| async move {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Unhandled error: {}", err),
-                )
-            }))
-            .layer(BufferLayer::new(1024))
-            .layer(RateLimitLayer::new(5, Duration::from_secs(1)))
-            .layer(TimeoutLayer::new(Duration::from_secs(20)))
-        );
+                .layer(HandleErrorLayer::new(|err: BoxError| async move {
+                    (
+                        StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Unhandled error: {}", err),
+                    )
+                }))
+                .layer(BufferLayer::new(1024))
+                .layer(RateLimitLayer::new(5, Duration::from_secs(1)))
+                .layer(TimeoutLayer::new(Duration::from_secs(20))),
+        )
+        .with_state(app_state);
 
     let server = Server::bind(
         &"0.0.0.0:0"

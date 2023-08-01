@@ -6,22 +6,21 @@ use axum::{
     response::{Html, Json, Response},
 };
 use serde::{Deserialize, Serialize};
+use sqlx::{postgres::PgPoolOptions, PgPool};
 use tokio::fs::read_to_string;
-use sqlx::{PgPool,
-postgres::PgPoolOptions};
 
 pub struct AppState {
-    pool : PgPool, 
+    pub pool: PgPool,
 }
 
 impl AppState {
-    pub async fn new() -> Self{
-        AppState { pool: 
-            PgPoolOptions::new()
+    pub async fn new() -> Self {
+        AppState {
+            pool: PgPoolOptions::new()
                 .max_connections(8)
                 .connect(&std::env::var("SUPA_BASE_POOL_URL").expect("Database URL must be set"))
                 .await
-                .expect("Failure of creation of AppState is reason enough to crash")
+                .expect("Failure of creation of AppState is reason enough to crash"),
         }
     }
 }

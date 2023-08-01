@@ -198,13 +198,12 @@ export const createDocument = async (title) => {
             headers : {
                 "Content-Type" : "application/json"
             },
-            body : JSON.stringify({unique_id: null , text : title})
+            body : JSON.stringify({title : title})
         });
-
 
         if (response.status != 200) {
             document.getElementById("user-document-title-modal").classList.add("hidden");
-            document.getElementById("overlay").classList.add("hidden");
+            document.querySelector(".overlay").classList.remove("hidden");
             open_external_error_modal(response, await response.text()); 
             return;
         }
@@ -221,6 +220,8 @@ export const createDocument = async (title) => {
     document.getElementById("user-document-title-modal").classList.add("hidden");
     const overlay = document.querySelector(".overlay");
     overlay.classList.add("hidden");
+    document.getElementById("editor-container").classList.remove("hidden");
+    document.getElementById("markdown-display").classList.remove("hidden");
 }
 
 export const fetchUserDocuments  = async () => {

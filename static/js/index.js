@@ -50,6 +50,7 @@ let currentDocTimeoutId = {
                 return;
             }
 
+            debugger;
             await createDocument(document.getElementById("document-title-field").value);
         }
 

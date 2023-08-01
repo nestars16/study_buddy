@@ -3,24 +3,24 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum StudyBuddySessionError {
     InvalidUserSession,
     NoSessionId,
-    LookupFailed
+    LookupFailed,
 }
 
-impl IntoResponse for StudyBuddySessionError{
+impl IntoResponse for StudyBuddySessionError {
     fn into_response(self) -> Response {
         match self {
             StudyBuddySessionError::InvalidUserSession => {
                 (StatusCode::UNAUTHORIZED, "Invalid user session").into_response()
-            },
+            }
             StudyBuddySessionError::NoSessionId => {
-            (StatusCode::UNAUTHORIZED, "No session cookie found").into_response()
-            },
+                (StatusCode::UNAUTHORIZED, "No session cookie found").into_response()
+            }
             StudyBuddySessionError::LookupFailed => {
-            (StatusCode::INTERNAL_SERVER_ERROR, "Lookup Failed").into_response()
+                (StatusCode::INTERNAL_SERVER_ERROR, "Lookup Failed").into_response()
             }
         }
     }
@@ -32,6 +32,7 @@ impl From<StudyBuddySessionError> for StudyBuddyError {
     }
 }
 
+#[derive(Debug)]
 pub enum StudyBuddyError {
     SessionError(StudyBuddySessionError),
     NoMatchingUserRecord,
@@ -40,11 +41,18 @@ pub enum StudyBuddyError {
     WrongEmailOrPassword,
     DocumentNotFound,
     ReqwestWrapper(reqwest::Error),
+    SqlxWrapper(sqlx::Error),
 }
 
 impl From<reqwest::Error> for StudyBuddyError {
     fn from(value: reqwest::Error) -> Self {
         StudyBuddyError::ReqwestWrapper(value)
+    }
+}
+
+impl From<sqlx::Error> for StudyBuddyError {
+    fn from(value: sqlx::Error) -> Self {
+        StudyBuddyError::SqlxWrapper(value)
     }
 }
 
@@ -77,11 +85,12 @@ impl IntoResponse for StudyBuddyError {
             }
             StudyBuddyError::DocumentNotFound => {
                 (StatusCode::NO_CONTENT, "Document ID isn't valid").into_response()
-            },
-            StudyBuddyError::SessionError(err) => {
-                err.into_response()
             }
-
+            StudyBuddyError::SessionError(err) => err.into_response(),
+            //Could be better
+            StudyBuddyError::SqlxWrapper(error) => {
+                (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+            }
         }
     }
 }
