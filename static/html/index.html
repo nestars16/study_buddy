@@ -43,12 +43,16 @@
                     <path d="M12 7a5 5 0 1 1 -4.995 5.217l-.005 -.217l.005 -.217a5 5 0 0 1 4.995 -4.783z" stroke-width="0" fill="currentColor"></path>
                 </svg>
             </button>
-            <button id="all-documents" class="action-button all-documents-button hidden">●●●</button>
+            <button  id="all-documents" class="action-button all-documents-button hidden">●●●</button>
             <button id="add-document" class="action-button dark-mode-button new-document-button hidden">➕</button >
             <button id="sign-up" class="action-button user-buttons dark-mode-button">Register</button>
             <button id="log-in" class="action-button user-buttons dark-mode-button">Log in</button>
-            <button id="log-out" class="action-button user-buttons dark-mode-button hidden">Log out</button>
-            <button id="download" class="action-button download-button dark-mode-button">Download as PDF</button>
+            <button id="log-out" class="action-button user-buttons dark-mode-button hidden">
+                <span>Log out</span>
+            </button>
+            <button id="download" class="action-button download-button dark-mode-button">
+                <span>Download as PDF</span>
+            </button>
         </nav>
         <main>
             <section class="editor-container" id="editor-container">
@@ -67,8 +71,9 @@
                     <input name="email" id="email-field" type="email" placeholder="Email" form="user-form" class="dark-mode-text-field" required>
                     <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" class="dark-mode-text-field" required>
                     <input name="password-confirmation" id="password-confirmation-field" class="hidden dark-mode-text-field" type="password" placeholder="Confirm Password" form="user-form" required>
-                    <input id="submit-button"type="submit" class="action-button submit-button dark-mode-button" type="submit" form="user-form" value="Submit">
-                    <span id="loader" class="loader hidden"></span>
+                    <button id="submit-button" class="action-button submit-button dark-mode-button">
+                        <span>Submit</span>
+                    </button>
                 </form>
                 <span id="modal-error" class="error-message"></span>
             </section>
@@ -82,7 +87,9 @@
                 <button id="user-document-title-close" class="button-close action-button dark-mode-button">⨉</button>
                 <form id="document-title-form">
                     <input id="document-title-field" type="text" class="dark-mode-text-field" placeholder="Enter the title of your document" required>
-                    <input id="document-title-submit" type="submit"  class="action-button submit-button dark-mode-button" form="document-title-form" value="Submit">
+                    <button id="document-title-submit" class="action-button submit-button dark-mode-button">
+                        <span>Submit</span>
+                    </button>
                 </form>
             </section>
             <section id="all-documents-modal" class="modal document-modal dark-mode-modal hidden">

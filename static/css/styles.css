@@ -147,6 +147,7 @@ align-items: center;
 justify-content: center;
 transition: background 0.3s;
 border : none;
+position: relative;
 }
 
 .dark-mode-button{
@@ -184,6 +185,10 @@ border : none;
 .action-button:active{
     transform: scale(0.95);
     transition: transform 0.1s;
+}
+
+.action-button:disabled {
+    filter : brightness(75%);
 }
 
 .top-navbar {
@@ -331,69 +336,8 @@ light-user-modal-title {
 }
 
 .error-modal p {
-
     text-align: center;
 }
-
-.loader {
-          width: 48px;
-          height: 48px;
-          margin: auto;
-          position: relative;
-        }
-
-        .loader:before {
-            content: '';
-            width: 48px;
-            height: 5px;
-            background: #000;
-            opacity: 0.25;
-            position: absolute;
-            top: 60px;
-            left: 0;
-            border-radius: 50%;
-            animation: shadow 0.5s linear infinite;
-          }
-
-          .loader:after {
-            content: '';
-            width: 100%;
-            height: 100%;
-            background: #fff;
-            animation: bxSpin 0.5s linear infinite;
-            position: absolute;
-            top: 0;
-            left: 0;
-            border-radius: 4px;
-          }
-
-        @keyframes bxSpin {
-          17% {
-            border-bottom-right-radius: 3px;
-          }
-          25% {
-            transform: translateY(9px) rotate(22.5deg);
-          }
-          50% {
-            transform: translateY(18px) scale(1, .9) rotate(45deg);
-            border-bottom-right-radius: 40px;
-          }
-          75% {
-            transform: translateY(9px) rotate(67.5deg);
-          }
-          100% {
-            transform: translateY(0) rotate(90deg);
-          }
-        }
-
-        @keyframes shadow {
-          0%, 100% {
-            transform: scale(1, 1);
-          }
-          50% {
-            transform: scale(1.2, 1);
-          }
-        }
 
 .new-document-button {
     color : #FAFAFA,
@@ -401,32 +345,6 @@ light-user-modal-title {
 
 .title-modal {
     max-height: 15%;
-}
-
-.tabs-container {
-    display : flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: left;
-    gap: 10px;
-}
-
-.tab {
-    border : none;
-    border-radius: 15px 15px 0px 0px;
-    position: relative;
-    height: 100%;
-    display: inline-block;
-}
-
-.dark-mode-tab {
-    color: #506882;
-    background-color: #161B2F;
-}
-
-.light-mode-tab {
-    color: black;
-    background-color: #D0D0D7;
 }
 
 .document-modal {
@@ -463,17 +381,48 @@ light-user-modal-title {
   text-decoration : none;
 }
 
-modal::backdrop {
-  position: fixed;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(3px);
-  z-index: 2;
+.loading-button span{
+    visibility: hidden;
+}
+
+.loading-button::after {
+    content: "";
+    width: 16px;
+    height: 16px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin : auto;
+    border: 4px solid transparent;
+    border-radius: 50%;
+    border-top-color: #FAFAFA;
+    animation : loading-button-spinner 1s ease infinite;
 }
 
 
+@keyframes loading-button-spinner {
+    from {
+        transform: rotate(0turn);
+    }
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+.loading-overlay::after {
+    content: "";
+    width: 100px;
+    height: 100px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin : auto;
+    border: 4px solid transparent;
+    border-radius: 50%;
+    border-top-color: #FAFAFA;
+    animation : loading-button-spinner 1s ease infinite;
+}

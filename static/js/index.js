@@ -1,7 +1,8 @@
 import {highlight,resizeTextarea,enableTabbing,updateLineNumbers, 
     openUserActionsModal, closeUserActionModal, closeErrorModal,closeAllDocumentsModal, closeDocumentCreationModal,toggleMode, 
-    openDocumentTitleModal, showUserPosts} from './editorActions.js'
-import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, LogOut, createDocument, fetchUserDocuments,fetchCurrentDocumentContent} from './api.js'
+    openDocumentTitleModal, showUserPosts,
+    disableButtonAndShowSpinner,enableLoadingScreen, disableLoadingScreen} from './editorActions.js'
+import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, logOut, createDocument, fetchUserDocuments,fetchCurrentDocumentContent} from './api.js'
 
 "use strict";
 
@@ -43,7 +44,9 @@ let currentDocTimeoutId = {
         addDocumentCloseButton.onclick = closeDocumentCreationModal;
 
         showAllDocumentsButton.onclick = async () => {
+            enableLoadingScreen();
             currentDocuments = await fetchUserDocuments();
+            disableLoadingScreen();
             showUserPosts(currentDocuments,currentMode,fetchCurrentDocumentContent,currentDocTimeoutId);
         }
 
@@ -59,12 +62,14 @@ let currentDocTimeoutId = {
                 return;
             }
 
-            debugger;
+            disableButtonAndShowSpinner(documentTitleSubmit,currentMode);
             await createDocument(document.getElementById("document-title-field").value);
         }
 
         submitButton.onclick = async (event) => {
             event.preventDefault();
+            disableButtonAndShowSpinner(submitButton,currentMode);
+            submitButton.disabled = true;
             await submitButtonAction();
         }
 
@@ -73,7 +78,8 @@ let currentDocTimeoutId = {
         }
 
         logOutButton.onclick = async () => {
-            await LogOut();
+            disableButtonAndShowSpinner(logOutButton,currentMode);
+            await logOut();
         }
 
         registerButton.onclick = () => {
@@ -106,6 +112,7 @@ let currentDocTimeoutId = {
         editor.onkeydown = enableTabbing; 
 
         downloadButton.onclick = async () => {
+            disableButtonAndShowSpinner(downloadButton, currentMode);
             await downloadMarkdownToPDF(display.innerHTML, currentMode);
         }
 

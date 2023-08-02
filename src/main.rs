@@ -6,18 +6,17 @@ use axum::{
     BoxError, Router, Server,
 };
 use std::{sync::Arc, time::Duration};
-use tower::{buffer::BufferLayer, timeout::TimeoutLayer, ServiceBuilder};
-
+use tower::{
+    limit::rate::RateLimitLayer,
+    buffer::BufferLayer, timeout::TimeoutLayer, ServiceBuilder};
 use study_buddy::users;
 use tokio::sync::Mutex;
-use tower::limit::rate::RateLimitLayer;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 
-//TODO JAVASCRIPT REFACTORING
 //TODO better button delay on frontend
-//TODO problem with line numbers
-
+//TODO add actual table styles
+//TODO add text search to document_titles
 
 //TODO tracing
 //TODO Remember me button

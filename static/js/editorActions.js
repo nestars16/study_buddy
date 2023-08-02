@@ -75,7 +75,6 @@ export const openUserActionsModal = (modalTitle) => {
     const modal = document.getElementById("user-modal");
     const modal_h2 = document.getElementById("user-modal-title");
     document.getElementById("submit-button").classList.remove("hidden");
-    document.getElementById("loader").classList.add("hidden");
     modal_h2.textContent = modalTitle;
     debugger;
 
@@ -199,6 +198,7 @@ export const toggleMode = () => {
         moonIcon.classList.remove("hidden");
     }
 
+
     return currentMode;
 }
 
@@ -264,3 +264,37 @@ export const showUserPosts = (documentArray, currentMode, fetchFunction, globalC
     hideMainContentAndShowOverlay();
 }
 
+export const disableButtonAndShowSpinner = (button,mode) => {
+
+    let spinnerColor;
+    switch(mode) {
+        case "light":
+            spinnerColor = "black"
+            break;
+        case "dark":
+            spinnerColor = "#FAFAFA";
+            break;
+    }
+
+    button.style.borderTopColor = spinnerColor;
+    button.disabled = true;
+    button.classList.add("loading-button");    
+}
+
+export const enableButtonAndRemoveSpinner = (button)=> {
+    button.disabled = false;
+    button.classList.remove("loading-button");    
+}
+
+
+export const enableLoadingScreen = () => {
+    const  overlay = document.querySelector(".overlay");
+    overlay.classList.remove("hidden");
+    overlay.classList.add("loading-overlay");
+}
+
+export const disableLoadingScreen = () => {
+    const  overlay = document.querySelector(".overlay");
+    overlay.classList.add("hidden");
+    overlay.classList.remove("loading-overlay");
+}

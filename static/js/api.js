@@ -1,3 +1,6 @@
+import { enableButtonAndRemoveSpinner, closeDocumentCreationModal} from "./editorActions.js";
+
+
 export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
     
     try {
@@ -25,6 +28,8 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
         anchor_download.download = jsonResponse.data.url;
         anchor_download.target = "_blank";
         anchor_download.click();
+        const downloadButton = document.getElementById("download");
+        enableButtonAndRemoveSpinner(downloadButton); 
 
     } catch(error) {
         open_external_error_modal(null, error);
@@ -60,9 +65,6 @@ export const sendLogIn = async (username, password) => {
 
     const modalError = document.getElementById("modal-error");  
 
-    document.getElementById("submit-button").classList.add("hidden"); 
-    document.getElementById("loader").classList.remove("hidden"); 
-
     try {
         const response = await fetch("/log_in", {
             method: "POST",
@@ -76,8 +78,6 @@ export const sendLogIn = async (username, password) => {
         if (response.status != 200) {
             const responseText = await response.text();
 
-            document.getElementById("submit-button").classList.remove("hidden");
-            document.getElementById("loader").classList.add("hidden"); 
 
             modalError.textContent = responseText;
             return;
@@ -85,10 +85,6 @@ export const sendLogIn = async (username, password) => {
     }catch(error) {
         open_external_error_modal(null, error);
     }
-
-
-    document.getElementById("submit-button").classList.remove("hidden");
-    document.getElementById("loader").classList.add("hidden"); 
 
     location.reload();
 }
@@ -132,9 +128,6 @@ export const createUser = async (username,password,confirmPassword) => {
     }catch(error) {
         open_external_error_modal(null,error);
     }
-
-    document.getElementById("submit-button").classList.remove("hidden");
-    document.getElementById("loader").classList.add("hidden"); 
 }
 
 export const submitButtonAction = async () => {
@@ -156,9 +149,12 @@ export const submitButtonAction = async () => {
                         await createUser(email,password,confirmPassword);
                     break;
             }
+
+            const submitButton = document.getElementById("submit-button");
+            enableButtonAndRemoveSpinner(submitButton);
 }
 
-export const LogOut = async () => {
+export const logOut = async () => {
 
     try {
         const response = await fetch("/log_out", 
@@ -210,11 +206,9 @@ export const createDocument = async (title) => {
         open_external_error_modal(null, error);
     }
 
-    document.getElementById("user-document-title-modal").classList.add("hidden");
-    const overlay = document.querySelector(".overlay");
-    overlay.classList.add("hidden");
-    document.getElementById("editor-container").classList.remove("hidden");
-    document.getElementById("markdown-display").classList.remove("hidden");
+    closeDocumentCreationModal();
+    const submit = document.getElementById("document-title-submit");
+    enableButtonAndRemoveSpinner(submit);
 }
 
 export const fetchUserDocuments  = async () => {
