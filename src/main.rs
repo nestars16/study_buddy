@@ -14,12 +14,12 @@ use tower::limit::rate::RateLimitLayer;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 
-//TODO JAVASCRIPT REFACTORING - use the dialog for modals
-
-//TODO test create user and fetch content
-
-
+//TODO JAVASCRIPT REFACTORING
 //TODO better button delay on frontend
+//TODO problem with line numbers
+
+
+//TODO tracing
 //TODO Remember me button
 //TODO Forgot your password button
 

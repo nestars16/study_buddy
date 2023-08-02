@@ -39,16 +39,14 @@ export const enableTabbing =  (event) => {
         }
 
 export const updateLineNumbers = (event) => {
+    const lineNumbers = document.querySelector(".line-numbers");
 
-             
-            const lineNumbers = document.querySelector(".line-numbers");
+    const numberOfLines = event.target.value.split('\n').length
 
-            const numberOfLines = event.target.value.split('\n').length
-
-            lineNumbers.innerHTML = Array(numberOfLines)
-                .fill('<span></span>')
-                .join('')
-        }
+    lineNumbers.innerHTML = Array(numberOfLines)
+        .fill('<span></span>')
+        .join('')
+}
 
 const hideMainContentAndShowOverlay = () => {
 
@@ -65,25 +63,21 @@ const hideMainContentAndShowOverlay = () => {
 
 
 export const openDocumentTitleModal = () => {
-
     hideMainContentAndShowOverlay();
-
     const titleModal = document.getElementById("user-document-title-modal");
     titleModal.classList.remove("hidden");
-
 }
 
-export const openModal = (modalTitle) => {  
+export const openUserActionsModal = (modalTitle) => {  
 
     hideMainContentAndShowOverlay();
 
-    const modal = document.querySelector(".modal");
-    const modal_h2 = document.querySelector(".user-modal-title");
-
+    const modal = document.getElementById("user-modal");
+    const modal_h2 = document.getElementById("user-modal-title");
     document.getElementById("submit-button").classList.remove("hidden");
     document.getElementById("loader").classList.add("hidden");
-
     modal_h2.textContent = modalTitle;
+    debugger;
 
     if (modalTitle === "Register") {
         const confirmPassword = document.getElementById("password-confirmation-field");
@@ -93,36 +87,59 @@ export const openModal = (modalTitle) => {
     modal.classList.remove("hidden");
 }
 
-export const closeModal = () => {
-
-    console.log("clicked close");
+export const hideOverlayAndShowMainContent = () => {
 
     const display = document.getElementById("markdown-display");
-    const modal = document.querySelector(".modal");
-    const errorModal = document.getElementById("error-modal");
-    const overlay = document.querySelector(".overlay");
     const editor = document.querySelector(".editor-container"); 
-    const confirmPassword = document.getElementById("password-confirmation-field");
+    const overlay = document.querySelector(".overlay");
     const errorMessage = document.getElementById("modal-error");
-    const titleModal = document.getElementById("user-document-title-modal");
-    const allDocumentsModal = document.getElementById("all-documents-modal");
 
-    titleModal.classList.add("hidden");
     display.classList.remove("hidden");
     editor.classList.remove("hidden");
-    allDocumentsModal.classList.add("hidden");
-
     overlay.classList.add("hidden");
-    modal.classList.add("hidden");
-    errorModal.classList.add("hidden");
-    confirmPassword.classList.add("hidden");
+
     errorMessage.textContent = '';
 }
 
+export const closeUserActionModal = () => {
+    hideOverlayAndShowMainContent();
+    const userActionModal = document.getElementById("user-modal");
+    const confirmPassword = document.getElementById("password-confirmation-field");
+    confirmPassword.classList.add("hidden");
+    userActionModal.classList.add("hidden");
+}
+
+export const closeErrorModal = () => {
+    hideOverlayAndShowMainContent();
+    const errorModal = document.getElementById("error-modal");
+    errorModal.classList.add("hidden");
+}
+
+export const closeDocumentCreationModal = () => {
+    hideOverlayAndShowMainContent();
+    const titleModal = document.getElementById("user-document-title-modal");
+    titleModal.classList.add("hidden");
+}
+
+export const closeAllDocumentsModal = () => {
+    hideOverlayAndShowMainContent();
+    const allDocumentsModal = document.getElementById("all-documents-modal");
+    allDocumentsModal.classList.add("hidden");
+}
+
 export const toggleMode = () => {
-   
     const body = document.querySelector("body");
     let currentMode = '';
+
+    const toggleModeInner = (dark_variant, light_variant, element) => {
+        if(element.classList.contains(dark_variant)) {
+            element.classList.remove(dark_variant);
+            element.classList.add(light_variant);
+        }else {
+            element.classList.remove(light_variant);
+            element.classList.add(dark_variant);
+        }
+    }
 
     if (body.classList.contains("dark-mode-body")) {
         body.classList.remove("dark-mode-body");
@@ -137,25 +154,13 @@ export const toggleMode = () => {
     const titles = document.querySelectorAll(".user-modal-title");
 
     for(const title of titles) {
-        if(title.classList.contains("dark-user-modal-title")){
-            title.classList.remove("dark-user-modal-title");
-            title.classList.add("light-user-modal-title");
-        }else {
-            title.classList.add("dark-user-modal-title");
-            title.classList.remove("light-user-modal-title");
-        }
+        toggleModeInner("dark-user-modal-title", "light-user-modal-title", title);
     }
 
     const modals = document.querySelectorAll(".modal");
 
     for(const modal of modals) {
-        if (modal.classList.contains("dark-mode-modal")) {
-            modal.classList.remove("dark-mode-modal");
-            modal.classList.add("light-mode-modal");
-        } else {
-            modal.classList.remove("light-mode-modal");
-            modal.classList.add("dark-mode-modal");
-        }
+        toggleModeInner("dark-mode-modal", "light-mode-modal", modal)
     }
 
     const buttons = document.querySelectorAll(".action-button");
@@ -165,41 +170,20 @@ export const toggleMode = () => {
         if(button.id === "all-documents") {
             continue;
         }
-
-        if (button.classList.contains("dark-mode-button")) {
-            button.classList.remove("dark-mode-button");
-            button.classList.add("light-mode-button");
-        } else {
-            button.classList.remove("light-mode-button");
-            button.classList.add("dark-mode-button");
-        }
+        toggleModeInner("dark-mode-button","light-mode-button", button);
     }
     
     const inputFields = [document.getElementById("email-field"), document.getElementById("password-field"), document.getElementById("password-confirmation-field"), 
         document.getElementById("document-title-field")];
 
     for(const inputField of inputFields) {
-        if (inputField.classList.contains("dark-mode-text-field")) {
-            inputField.classList.remove("dark-mode-text-field");
-            inputField.classList.add("light-mode-text-field");
-        } else {
-            inputField.classList.remove("light-mode-text-field");
-            inputField.classList.add("dark-mode-text-field");
-        }
+        toggleModeInner("dark-mode-text-field", "light-mode-text-field", inputField)
     }
 
     const editor = document.getElementById("editor");
-
-    if(editor.classList.contains("dark-mode-input")) {
-        editor.classList.remove("dark-mode-input");
-        editor.classList.add("light-mode-input");
-    }else {
-        editor.classList.remove("light-mode-input");
-        editor.classList.add("dark-mode-input");
-    }
+    toggleModeInner("dark-mode-input", "light-mode-input", editor);
 
     const toggleButton = document.getElementById("toggle-modes");
-
     const moonIcon = document.getElementById("moon");
     const sunIcon = document.getElementById("sun");
 
@@ -246,7 +230,6 @@ export const showUserPosts = (documentArray, currentMode, fetchFunction, globalC
     documentModal.innerHTML = '';
 
     for(const [index, value] of documentArray.entries()) {
-
         const documentAnchor = document.createElement("a");
         documentAnchor.href = "#";
         documentAnchor.id = index;
@@ -277,8 +260,6 @@ export const showUserPosts = (documentArray, currentMode, fetchFunction, globalC
         }
 
     }
-    
-
     document.getElementById("all-documents-modal").classList.remove("hidden");
     hideMainContentAndShowOverlay();
 }

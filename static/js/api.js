@@ -15,22 +15,17 @@ export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
         const SUCCESS = 200;
 
         if (serverResponse.status != SUCCESS) { 
-
             open_external_error_modal(serverResponse, await serverResponse.text());
-
             return;                
-            
         }
 
         const jsonResponse = await serverResponse.json();
-
-        console.log(jsonResponse);
-
         const anchor_download = document.createElement('a');
         anchor_download.href = jsonResponse.data.url;
         anchor_download.download = jsonResponse.data.url;
         anchor_download.target = "_blank";
         anchor_download.click();
+
     } catch(error) {
         open_external_error_modal(null, error);
     }
@@ -53,13 +48,11 @@ export const checkForLogInUser = () => {
     const cookiesObject = getCookiesObject(); 
 
     if (cookiesObject.session_id) {
-
         document.getElementById("sign-up").classList.add("hidden")
         document.getElementById("log-in").classList.add("hidden")
         document.getElementById("log-out").classList.remove("hidden");
         document.getElementById("add-document").classList.remove("hidden");
         document.getElementById("all-documents").classList.remove("hidden");
-
     }
 }
 
@@ -291,7 +284,7 @@ export const savePost = async (document_id, text) => {
  function open_external_error_modal (serverResponse, text) {
 
         if(!serverResponse) {
-            serverResponse = "No status code";
+            serverResponse.status = "No status code";
         }
 
         const display = document.getElementById("markdown-display");  

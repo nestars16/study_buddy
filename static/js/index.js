@@ -1,4 +1,6 @@
-import {highlight,resizeTextarea,enableTabbing,updateLineNumbers, openModal, closeModal, toggleMode, openDocumentTitleModal, showUserPosts} from './editorActions.js'
+import {highlight,resizeTextarea,enableTabbing,updateLineNumbers, 
+    openUserActionsModal, closeUserActionModal, closeErrorModal,closeAllDocumentsModal, closeDocumentCreationModal,toggleMode, 
+    openDocumentTitleModal, showUserPosts} from './editorActions.js'
 import {downloadMarkdownToPDF, submitButtonAction, checkForLogInUser, LogOut, createDocument, fetchUserDocuments,fetchCurrentDocumentContent} from './api.js'
 
 "use strict";
@@ -23,22 +25,29 @@ let currentDocTimeoutId = {
         const downloadButton = document.getElementById("download");
         const registerButton = document.getElementById("sign-up");
         const logInButton = document.getElementById("log-in");
-        const closeModalButtons = document.querySelectorAll(".button-close");
         const submitButton  = document.getElementById("submit-button");
         const logOutButton = document.getElementById("log-out");
         const addButton = document.getElementById("add-document");
         const documentTitleSubmit = document.getElementById("document-title-submit");
         const documentTitleForm = document.getElementById("document-title-form");
         const showAllDocumentsButton = document.getElementById("all-documents");
+        const errorCloseButton = document.getElementById("error-modal-close");
+        const allDocumentsCloseButton = document.getElementById("document-close-button");
+        const addDocumentCloseButton = document.getElementById("user-document-title-close");
+        const userActionModalClose = document.getElementById("user-modal-close");
+        
+
+        userActionModalClose.onclick = closeUserActionModal;
+        errorCloseButton.onclick = closeErrorModal;
+        allDocumentsCloseButton.onclick = closeAllDocumentsModal;
+        addDocumentCloseButton.onclick = closeDocumentCreationModal;
 
         showAllDocumentsButton.onclick = async () => {
             currentDocuments = await fetchUserDocuments();
             showUserPosts(currentDocuments,currentMode,fetchCurrentDocumentContent,currentDocTimeoutId);
         }
 
-        addButton.onclick = () => {
-           openDocumentTitleModal(); 
-        }
+        addButton.onclick = openDocumentTitleModal; 
 
         documentTitleForm.onsubmit = (event) => {
            event.preventDefault(); 
@@ -68,17 +77,11 @@ let currentDocTimeoutId = {
         }
 
         registerButton.onclick = () => {
-            openModal("Register");
+            openUserActionsModal("Register");
         }
 
         logInButton.onclick = () => {
-            openModal("Log In");
-        }
-
-        for (let button of closeModalButtons) {
-            button.onclick = () => {
-                closeModal(display);
-            }
+            openUserActionsModal("Log In");
         }
 
         editor.setAttribute("data-initialized",true);
@@ -111,7 +114,6 @@ let currentDocTimeoutId = {
 
 document.addEventListener("DOMContentLoaded", () => {
 
-    
     resizeTextarea(editor);
     highlight(editor,highlight);
     initialSetup();
@@ -136,5 +138,4 @@ document.addEventListener("DOMContentLoaded", () => {
             refreshMathTexCounter -= 1;
         }
     }, 150);
-
 })

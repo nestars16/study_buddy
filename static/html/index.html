@@ -60,9 +60,9 @@
                     <pre aria-hidden="true" class="plain__highlights"><code id="highlight" data-el="highlight" class="markdown"></code></pre>
                 </div>
             </section>
-            <section id="main-modal" class="modal dark-mode-modal hidden">
-                <button class="button-close action-button dark-mode-button">⨉</button>
-                <h2 class="user-modal-title dark-user-modal-title"></h2>
+            <section id="user-modal" class="modal dark-mode-modal hidden">
+                <button id="user-modal-close" class="button-close action-button dark-mode-button">⨉</button>
+                <h2 id="user-modal-title" class="user-modal-title dark-user-modal-title"></h2>
                 <form id="user-form">
                     <input name="email" id="email-field" type="email" placeholder="Email" form="user-form" class="dark-mode-text-field" required>
                     <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" class="dark-mode-text-field" required>
@@ -72,16 +72,14 @@
                 </form>
                 <span id="modal-error" class="error-message"></span>
             </section>
-            <section class="modal dark-mode-modal hidden">
-            </section>
             <section id="error-modal" class="modal dark-mode-modal hidden error-modal">
-                <button class="button-close dark-mode-button action-button">⨉</button>
+                <button id="error-modal-close" class="button-close dark-mode-button action-button">⨉</button>
                 <h2 class="user-modal-title dark-user-modal-title">Sorry!😦</h2>
                 <p>There seemed to be an error handling your request</p>
                 <p id="error-message" class="error-message"></p>
             </section>
             <section id="user-document-title-modal" class="modal title-modal dark-mode-modal hidden">
-                <button class="button-close action-button dark-mode-button">⨉</button>
+                <button id="user-document-title-close" class="button-close action-button dark-mode-button">⨉</button>
                 <form id="document-title-form">
                     <input id="document-title-field" type="text" class="dark-mode-text-field" placeholder="Enter the title of your document" required>
                     <input id="document-title-submit" type="submit"  class="action-button submit-button dark-mode-button" form="document-title-form" value="Submit">
