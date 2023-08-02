@@ -14,7 +14,6 @@ use tokio::sync::Mutex;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 
-//TODO better button delay on frontend
 //TODO add actual table styles
 //TODO add text search to document_titles
 
