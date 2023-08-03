@@ -94,14 +94,20 @@ export const createUser = async (username,password,confirmPassword) => {
 
     const modalError = document.getElementById("modal-error");  
 
-    if(password !== confirmPassword) {
-        modalError.textContent = "Passwords dont match";     
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
 
+    if(!password.match(passwordRegex)) {
+        modalError.textContent = "Password must contain minimum eight characters\nat least one letter and one number";
+        enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
         return;
     }
 
-    document.getElementById("submit-button").classList.add("hidden"); 
-    document.getElementById("loader").classList.remove("hidden"); 
+    if(password !== confirmPassword) {
+        modalError.textContent = "Passwords dont match";     
+        enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
+        return;
+    }
+
 
     try {
         const response = await fetch("/create_user", {
@@ -116,8 +122,6 @@ export const createUser = async (username,password,confirmPassword) => {
         if(response.status != 201) {
             const responseText = await response.text();
 
-            document.getElementById("submit-button").classList.remove("hidden");
-            document.getElementById("loader").classList.add("hidden"); 
 
             modalError.textContent = responseText;
             return;
@@ -137,17 +141,31 @@ export const submitButtonAction = async () => {
             const modalType = document.querySelector(".user-modal-title").textContent;
             const email = document.getElementById("email-field").value;
             const password = document.getElementById("password-field").value;
-
-            console.log(modalType);
+            const errorMessage = document.getElementById("modal-error");
+            const fieldsArentFilled = !(email && password);
 
             switch(modalType){
                 case "Log In":
-                       const wantsToBeRemembered = document.querySelector(".toggle__input").checked;
-                       await sendLogIn(email,password,wantsToBeRemembered); 
+                    const wantsToBeRemembered = document.querySelector(".toggle__input").checked;
+
+                    if(fieldsArentFilled) {
+                        errorMessage.textContent = "All fields are required";
+                        enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
+                        return;
+                    }
+                    await sendLogIn(email,password,wantsToBeRemembered); 
                     break;
                 case "Register":
-                        const confirmPassword =  document.getElementById("password-confirmation-field").value;
-                        await createUser(email,password,confirmPassword);
+
+                    const confirmPassword =  document.getElementById("password-confirmation-field").value;
+
+                    if(fieldsArentFilled || !(confirmPassword)) {
+                        errorMessage.textContent = "All fields are required";
+                        enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
+                        return;
+                    }
+
+                    await createUser(email,password,confirmPassword);
                     break;
             }
 

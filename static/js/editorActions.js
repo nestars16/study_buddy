@@ -74,9 +74,7 @@ export const openUserActionsModal = (modalTitle) => {
 
     const modal = document.getElementById("user-modal");
     const modal_h2 = document.getElementById("user-modal-title");
-    document.getElementById("submit-button").classList.remove("hidden");
     modal_h2.textContent = modalTitle;
-    debugger;
 
     switch(modalTitle) {
         case "Register":
@@ -92,6 +90,8 @@ export const openUserActionsModal = (modalTitle) => {
             forgotPasswordLink.classList.remove("hidden");
             break;
     }
+
+    debugger;
 
     modal.classList.remove("hidden");
 }
@@ -112,10 +112,17 @@ export const hideOverlayAndShowMainContent = () => {
 
 export const closeUserActionModal = () => {
     hideOverlayAndShowMainContent();
+
     const userActionModal = document.getElementById("user-modal");
     const confirmPassword = document.getElementById("password-confirmation-field");
     confirmPassword.classList.add("hidden");
     userActionModal.classList.add("hidden");
+    const toggleSwitch = document.getElementById("toggle-switch");
+    toggleSwitch.classList.add("hidden");
+    const rememberMeText = document.getElementById("remember-me");
+    rememberMeText.classList.add("hidden");
+    const forgotPasswordLink = document.getElementById("forgot-password");
+    forgotPasswordLink.classList.add("hidden");
 }
 
 export const closeErrorModal = () => {

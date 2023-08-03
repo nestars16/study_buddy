@@ -5,7 +5,6 @@ use axum::{
     extract::State,
     extract::{FromRequestParts, Query},
     http::{
-        header,
         request::{Parts, Request},
         StatusCode,
     },
@@ -22,6 +21,7 @@ use tokio::sync::Mutex;
 use tower_cookies::{
     cookie::time::{Duration, OffsetDateTime},
     Cookie, Cookies};
+use check_if_email_exists::{check_email, CheckEmailInput,Reachable};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentUser {
@@ -87,7 +87,7 @@ impl User {
     ) -> Result<Option<User>, StudyBuddyError> 
     where T: sqlx::Type<sqlx::Postgres> + sqlx::Encode<'a, sqlx::Postgres> + std::marker::Send + 'a{
 
-        Ok(sqlx::query_as::<_, User>(&query_string)
+        Ok(sqlx::query_as::<_, User>(query_string)
             .bind(equal)
             .fetch_optional(pool)
             .await?)
@@ -133,7 +133,7 @@ pub async fn mw_user_ctx_resolver<B>(
 ) -> Result<Response, StudyBuddySessionError> {
     let session_id = cookies.get("session_id").map(|c| c.value().to_string());
 
-    let ctx_result = match session_id.ok_or_else(|| StudyBuddySessionError::NoSessionId) {
+    let ctx_result = match session_id.ok_or(StudyBuddySessionError::NoSessionId) {
         Ok(session_id) => {
 
             {
@@ -146,10 +146,9 @@ pub async fn mw_user_ctx_resolver<B>(
                     session_id
                 )
                 .await
-                .or_else(|_| Err(StudyBuddySessionError::LookupFailed))?
-                .ok_or_else(|| StudyBuddySessionError::InvalidUserSession)
+                .map_err(|_|StudyBuddySessionError::LookupFailed)?
+                .ok_or(StudyBuddySessionError::InvalidUserSession)
             }
-
         }
 
         Err(error) => Err(error),
@@ -177,7 +176,7 @@ impl<S: Send + Sync> FromRequestParts<S> for UserCtx {
         parts
             .extensions
             .get::<Result<UserCtx, StudyBuddySessionError>>()
-            .ok_or_else(|| StudyBuddySessionError::InvalidUserSession)?
+            .ok_or(StudyBuddySessionError::InvalidUserSession)?
             .clone()
     }
 }
@@ -188,6 +187,14 @@ pub async fn create_user(
     State(app_state): State<Arc<Mutex<AppState>>>,
     Json(user_payload): Json<SentUser>,
 ) -> Result<Response, StudyBuddyError> {
+
+
+    let email_to_check = CheckEmailInput::new(user_payload.email.clone()); 
+    let result = check_email(&email_to_check).await;
+
+    if !matches!(result.is_reachable, Reachable::Safe | Reachable::Risky) {
+        return Err(StudyBuddyError::InvalidEmailAddress);
+    }
 
     let pool = &app_state.lock().await.pool;
 

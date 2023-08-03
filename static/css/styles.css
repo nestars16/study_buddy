@@ -212,6 +212,7 @@ position: relative;
 .modal {
   min-width: 20%;
   max-height: 40%;
+  max-width: 20%;
   display: flex;
   flex-direction:column;
   gap: 10px;
@@ -337,6 +338,7 @@ light-user-modal-title {
 
 .error-modal p {
     text-align: center;
+    word-wrap: break-word;
 }
 
 .new-document-button {

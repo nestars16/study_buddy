@@ -41,6 +41,7 @@ pub enum StudyBuddyError {
     WrongEmailOrPassword,
     DocumentNotFound,
     ReqwestWrapper(reqwest::Error),
+    InvalidEmailAddress,
     SqlxWrapper(sqlx::Error),
 }
 
@@ -90,6 +91,9 @@ impl IntoResponse for StudyBuddyError {
             //Could be better
             StudyBuddyError::SqlxWrapper(error) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, error.to_string()).into_response()
+            },
+            StudyBuddyError::InvalidEmailAddress => {
+                (StatusCode::BAD_REQUEST, "Invalid email address").into_response()
             }
         }
     }

@@ -30,7 +30,7 @@ pub async fn get_root() -> Html<String> {
 }
 
 pub async fn refresh_file(ws: WebSocketUpgrade) -> Response {
-    ws.on_upgrade(|socket| modify_md_file_state(socket))
+    ws.on_upgrade(modify_md_file_state)
 }
 
 pub async fn modify_md_file_state(mut socket: WebSocket) {
@@ -42,8 +42,13 @@ pub async fn modify_md_file_state(mut socket: WebSocket) {
         };
 
         if let Message::Text(file_state) = new_md_file_state {
+
+            let parse_result = tokio::task::spawn_blocking( move || {
+                crate::parse_markdown(&file_state)
+            }).await.expect("Task cant panic");
+
             if socket
-                .send(Message::Text(crate::parse_markdown_file(&file_state)))
+                .send(Message::Text(parse_result))
                 .await
                 .is_err()
             {

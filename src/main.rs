@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use axum::{
     error_handling::HandleErrorLayer,
     http::StatusCode,
@@ -13,22 +14,30 @@ use study_buddy::users;
 use tokio::sync::Mutex;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
+use tracing::{info, Level};
+use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
+
+//TODO make registration fields required and add screenshake
+
+//TODO add text search to document_titles
 
 //TODO Password recovery endpoint and screen
 
 
-//TODO tracing
-//TODO add text search to document_titles
-
-
-
-
-//TODO??? maybe websockets problem
-
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
+
+    let filter = Targets::from_str(std::env::var("RUST_LOG").as_deref().unwrap_or("info"))
+            .expect("RUST_LOG should be a valid tracing filter");
+
+    tracing_subscriber::fmt()
+        .with_max_level(Level::TRACE)
+        .json()
+        .finish()
+        .with(filter)
+        .init();
 
     let app_state = Arc::new(Mutex::new(study_buddy::server::AppState::new().await));
 
@@ -63,8 +72,8 @@ async fn main() -> std::io::Result<()> {
                     )
                 }))
                 .layer(BufferLayer::new(1024))
-                .layer(RateLimitLayer::new(5, Duration::from_secs(1)))
-                .layer(TimeoutLayer::new(Duration::from_secs(20)))
+                .layer(RateLimitLayer::new(10, Duration::from_secs(1)))
+                .layer(TimeoutLayer::new(Duration::from_secs(60)))
                 .layer(CookieManagerLayer::new())
                 ,
         )
@@ -77,9 +86,9 @@ async fn main() -> std::io::Result<()> {
     )
     .serve(router.into_make_service());
 
-    println!("Listening on: {:?}", server.local_addr());
+    info!("Listening on: {:?}", server.local_addr());
 
-    let address_string = format!("http://{}", server.local_addr().to_string());
+    let address_string = format!("http://{}", server.local_addr());
 
     open::that(address_string)?;
 
