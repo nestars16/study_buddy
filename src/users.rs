@@ -19,12 +19,21 @@ use sqlx::{postgres::PgPool, FromRow};
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tower_cookies::{Cookie, Cookies};
+use tower_cookies::{
+    cookie::time::{Duration, OffsetDateTime},
+    Cookie, Cookies};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentUser {
     email: String,
     password: String,
+}
+
+#[derive(Deserialize)]
+pub struct LogInRequest {
+    email: String,
+    password: String,
+    wants_to_be_remembered: bool,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -175,6 +184,7 @@ impl<S: Send + Sync> FromRequestParts<S> for UserCtx {
 
 #[axum_macros::debug_handler]
 pub async fn create_user(
+    cookies: Cookies,
     State(app_state): State<Arc<Mutex<AppState>>>,
     Json(user_payload): Json<SentUser>,
 ) -> Result<Response, StudyBuddyError> {
@@ -193,38 +203,32 @@ pub async fn create_user(
 
     let session_id_string = session_id.to_string().clone();
 
-    {
-
-        sqlx::query!(
-            "INSERT INTO users (id, email, password, session_id)
-             VALUES ($1, $2, $3, $4)
-            ",
-            new_user.id,
-            new_user.email,
-            new_user.password,
-            session_id
-        )
+    sqlx::query!(
+        "INSERT INTO users (id, email, password, session_id)
+            VALUES ($1, $2, $3, $4)
+        ",
+        new_user.id,
+        new_user.email,
+        new_user.password,
+        session_id
+    )
         .execute(pool)
         .await?;
-    }
 
-    let headers = [(
-        header::SET_COOKIE,
-        format!("session_id={}; SameSite=Strict", session_id_string),
-    )];
+    cookies.add(Cookie::new("session_id",session_id_string));
 
     Ok((
         StatusCode::CREATED,
-        headers,
-        "Created user and instantied user session",
+        "Created user and instantied user session"
     )
         .into_response())
 }
 
 #[axum_macros::debug_handler]
 pub async fn log_in(
+    cookies: Cookies,
     State(app_state): State<Arc<Mutex<AppState>>>,
-    Json(user_payload): Json<SentUser>,
+    Json(user_payload): Json<LogInRequest>,
 ) -> Result<Response, StudyBuddyError> {
 
     let pool = &app_state.lock().await.pool;
@@ -254,20 +258,23 @@ pub async fn log_in(
     .execute(pool)
     .await?;
 
-    let headers = [(
-        header::SET_COOKIE,
-        format!("session_id={}; SameSite=Strict", new_session_id),
-    )];
+    let mut session_cookie = Cookie::new("session_id",new_session_id.to_string());
+
+    if user_payload.wants_to_be_remembered {
+        session_cookie.set_expires(OffsetDateTime::now_utc() + Duration::days(365));
+    }
+
+    cookies.add(session_cookie);
 
     Ok((
         StatusCode::OK,
-        headers,
         "Created user and instantied user session",
     )
         .into_response())
 }
 
 pub async fn log_out(
+    cookies : Cookies,
     State(app_state): State<Arc<Mutex<AppState>>>,
     ctx: UserCtx,
 ) -> Result<Response, StudyBuddyError> {
@@ -288,14 +295,10 @@ pub async fn log_out(
         .await?;
     }
 
-    let headers = [(
-        header::SET_COOKIE,
-        format!("session_id=''; expires=Thu, 01 Jan 1970 00:00:00 GMT"),
-    )];
+    cookies.remove(Cookie::named("session_id"));
 
     Ok((
         StatusCode::OK,
-        headers,
         "Logged out and invalidated user session",
     )
         .into_response())

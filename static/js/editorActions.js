@@ -78,9 +78,19 @@ export const openUserActionsModal = (modalTitle) => {
     modal_h2.textContent = modalTitle;
     debugger;
 
-    if (modalTitle === "Register") {
-        const confirmPassword = document.getElementById("password-confirmation-field");
-        confirmPassword.classList.remove("hidden");
+    switch(modalTitle) {
+        case "Register":
+            const confirmPassword = document.getElementById("password-confirmation-field");
+            confirmPassword.classList.remove("hidden");
+            break;
+        case "Log In":
+            const toggleSwitch = document.getElementById("toggle-switch");
+            toggleSwitch.classList.remove("hidden");
+            const rememberMeText = document.getElementById("remember-me");
+            rememberMeText.classList.remove("hidden");
+            const forgotPasswordLink = document.getElementById("forgot-password");
+            forgotPasswordLink.classList.remove("hidden");
+            break;
     }
 
     modal.classList.remove("hidden");

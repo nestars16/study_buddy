@@ -61,7 +61,7 @@ export const checkForLogInUser = () => {
     }
 }
 
-export const sendLogIn = async (username, password) => {
+export const sendLogIn = async (username, password, wantsToBeRemembered) => {
 
     const modalError = document.getElementById("modal-error");  
 
@@ -71,7 +71,7 @@ export const sendLogIn = async (username, password) => {
             headers : {
                 "Content-Type" : "application/json",
             },
-            body : JSON.stringify({ email : username , password : password})
+            body : JSON.stringify({ email : username , password : password, wants_to_be_remembered: wantsToBeRemembered})
         });
 
 
@@ -137,15 +137,16 @@ export const submitButtonAction = async () => {
             const modalType = document.querySelector(".user-modal-title").textContent;
             const email = document.getElementById("email-field").value;
             const password = document.getElementById("password-field").value;
-            const confirmPassword =  document.getElementById("password-confirmation-field").value;
 
             console.log(modalType);
 
             switch(modalType){
                 case "Log In":
-                       await sendLogIn(email,password); 
+                       const wantsToBeRemembered = document.querySelector(".toggle__input").checked;
+                       await sendLogIn(email,password,wantsToBeRemembered); 
                     break;
                 case "Register":
+                        const confirmPassword =  document.getElementById("password-confirmation-field").value;
                         await createUser(email,password,confirmPassword);
                     break;
             }

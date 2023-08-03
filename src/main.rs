@@ -14,12 +14,15 @@ use tokio::sync::Mutex;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
 
-//TODO add actual table styles
-//TODO add text search to document_titles
+
+//TODO Password recovery endpoint and screen
+
 
 //TODO tracing
-//TODO Remember me button
-//TODO Forgot your password button
+//TODO add text search to document_titles
+
+
+
 
 //TODO??? maybe websockets problem
 
@@ -38,8 +41,7 @@ async fn main() -> std::io::Result<()> {
         .layer(middleware::from_fn_with_state(
             app_state.clone(),
             users::mw_user_ctx_resolver,
-        ))
-        .layer(CookieManagerLayer::new());
+        ));
 
     let router = Router::new()
         .route("/", get(study_buddy::server::get_root))
@@ -62,7 +64,9 @@ async fn main() -> std::io::Result<()> {
                 }))
                 .layer(BufferLayer::new(1024))
                 .layer(RateLimitLayer::new(5, Duration::from_secs(1)))
-                .layer(TimeoutLayer::new(Duration::from_secs(20))),
+                .layer(TimeoutLayer::new(Duration::from_secs(20)))
+                .layer(CookieManagerLayer::new())
+                ,
         )
         .with_state(app_state);
 
