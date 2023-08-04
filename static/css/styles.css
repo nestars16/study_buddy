@@ -517,3 +517,20 @@ light-user-modal-title {
 .forgotten-password-link:link {
   color: inherit;
 }
+
+.error-shake-modal {
+	animation : error-shake 0.4s 1 linear;
+}
+
+@keyframes error-shake {
+    0% { transform: translate(30px); }
+	20% { transform: translate(-30px); }
+	40% { transform: translate(15px); }
+	60% { transform: translate(-15px); }
+	80% { transform: translate(8px); }
+	100% {transform : translate(0px); }
+}
+
+.recovery {
+    max-width: 50%;
+}

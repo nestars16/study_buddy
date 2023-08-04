@@ -1,0 +1,27 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>StudyBuddy Recovery</title>
+    <link rel="stylesheet" href="static/css/styles.css">
+  </head>
+  <body class="dark-mode-body">
+    <main>
+        <section id="email-submission" class="modal dark-mode-modal recovery">
+            <h2 class="user-modal-title">Password recovery    🗝️</h2>
+            <p>Enter the email linked to your account so we may send a recovery email</p>
+            <input class="dark-mode-text-field" type="email">
+            <button id="submit-button" class="submit-button action-button dark-mode-button">Submit</button>
+        </section>
+        <section id="sent" class="modal dark-mode-modal recovery hidden">
+          <h2 class="user-modal-title">Sent!   📧</h2>
+          <p>If the email address is correct, you should see the recovery email in your inbox or spam folder</p>
+        </section>
+        <div class="overlay"></div>
+        <script src="static/js/recovery.js"></script>
+    </main>
+  </body>
+</html>

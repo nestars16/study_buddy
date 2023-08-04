@@ -36,12 +36,18 @@ let currentDocTimeoutId = {
         const allDocumentsCloseButton = document.getElementById("document-close-button");
         const addDocumentCloseButton = document.getElementById("user-document-title-close");
         const userActionModalClose = document.getElementById("user-modal-close");
-        
+        const userModal = document.getElementById("user-modal");
 
         userActionModalClose.onclick = closeUserActionModal;
         errorCloseButton.onclick = closeErrorModal;
         allDocumentsCloseButton.onclick = closeAllDocumentsModal;
         addDocumentCloseButton.onclick = closeDocumentCreationModal;
+
+        userModal.addEventListener("animationend", () => {
+            setTimeout(() => {
+                userModal.classList.remove("error-shake-modal")
+            },200)
+        })
 
         showAllDocumentsButton.onclick = async () => {
             enableLoadingScreen();
@@ -120,7 +126,6 @@ let currentDocTimeoutId = {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-
     resizeTextarea(editor);
     highlight(editor,highlight);
     initialSetup();

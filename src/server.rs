@@ -8,6 +8,7 @@ use axum::{
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
 use tokio::fs::read_to_string;
+use tracing::info;
 
 pub struct AppState {
     pub pool: PgPool,
@@ -26,15 +27,18 @@ impl AppState {
 }
 
 pub async fn get_root() -> Html<String> {
+    info!("Serving '/'");
     Html(read_to_string("static/html/index.html").await.unwrap())
 }
 
 pub async fn refresh_file(ws: WebSocketUpgrade) -> Response {
+    info!("Connecting to refresh socket");
     ws.on_upgrade(modify_md_file_state)
 }
 
 pub async fn modify_md_file_state(mut socket: WebSocket) {
     while let Some(new_md_file_state) = socket.recv().await {
+
         let new_md_file_state = if let Ok(file_state) = new_md_file_state {
             file_state
         } else {
@@ -79,7 +83,7 @@ pub struct ApiResponse {
 pub async fn download_current_markdown(
     Json(html_json_payload): Json<PDFDownloadRequest>,
 ) -> Result<Json<ApiResponse>, crate::StudyBuddyError> {
-    println!("{:?}", html_json_payload);
+    info!("Fullfilling download pdf request");
 
     #[derive(Serialize, Debug, Default)]
     struct ApiRequest {

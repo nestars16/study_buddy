@@ -17,13 +17,8 @@ use tower_http::services::ServeDir;
 use tracing::{info, Level};
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
-
-//TODO make registration fields required and add screenshake
-
 //TODO add text search to document_titles
-
 //TODO Password recovery endpoint and screen
-
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -61,6 +56,7 @@ async fn main() -> std::io::Result<()> {
         )
         .route("/create_user", post(users::create_user))
         .route("/log_in", post(users::log_in))
+        .route("/recovery", get(users::get_recovery_page))
         .merge(auth_needed_routes)
         .nest_service("/static", ServeDir::new("static"))
         .layer(

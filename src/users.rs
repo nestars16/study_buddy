@@ -2,6 +2,8 @@ use crate::server::AppState;
 use crate::{StudyBuddyError, StudyBuddySessionError};
 use async_trait::async_trait;
 use axum::{
+
+    response::Html,
     extract::State,
     extract::{FromRequestParts, Query},
     http::{
@@ -17,11 +19,14 @@ use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPool, FromRow};
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio::sync::Mutex;
+use tokio::{sync::Mutex,
+fs::read_to_string,
+    };
 use tower_cookies::{
     cookie::time::{Duration, OffsetDateTime},
     Cookie, Cookies};
 use check_if_email_exists::{check_email, CheckEmailInput,Reachable};
+use tracing::info;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentUser {
@@ -29,7 +34,7 @@ pub struct SentUser {
     password: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct LogInRequest {
     email: String,
     password: String,
@@ -131,7 +136,9 @@ pub async fn mw_user_ctx_resolver<B>(
     mut req: Request<B>,
     next: Next<B>,
 ) -> Result<Response, StudyBuddySessionError> {
+    info!("Attempting to extract UserCtx");
     let session_id = cookies.get("session_id").map(|c| c.value().to_string());
+
 
     let ctx_result = match session_id.ok_or(StudyBuddySessionError::NoSessionId) {
         Ok(session_id) => {
@@ -158,6 +165,7 @@ pub async fn mw_user_ctx_resolver<B>(
 
     if ctx_result.is_err() && !matches!(ctx_result, Err(StudyBuddySessionError::NoSessionId)) {
         cookies.remove(Cookie::named("session_id"));
+        info!("Failed to extract UserCtx");
     }
 
     req.extensions_mut().insert(ctx_result);
@@ -188,11 +196,12 @@ pub async fn create_user(
     Json(user_payload): Json<SentUser>,
 ) -> Result<Response, StudyBuddyError> {
 
-
+    info!("Creating user with credentials {:?}", user_payload);
     let email_to_check = CheckEmailInput::new(user_payload.email.clone()); 
     let result = check_email(&email_to_check).await;
 
     if !matches!(result.is_reachable, Reachable::Safe | Reachable::Risky) {
+        info!("Invalid email address : {}", user_payload.email);
         return Err(StudyBuddyError::InvalidEmailAddress);
     }
 
@@ -200,6 +209,7 @@ pub async fn create_user(
 
     let query_string = User::create_validate_user_string("email");
     if User::validate_user_new(pool,&query_string,&user_payload.email).await?.is_some() {
+        info!("email address already in use: {}", user_payload.email);
         return Err(StudyBuddyError::EmailAlreadyInUse)
     }
 
@@ -238,8 +248,9 @@ pub async fn log_in(
     Json(user_payload): Json<LogInRequest>,
 ) -> Result<Response, StudyBuddyError> {
 
-    let pool = &app_state.lock().await.pool;
+    info!("Logging in user {:?}", user_payload);
 
+    let pool = &app_state.lock().await.pool;
     let query_string = User::create_validate_user_string("email");
     let mut user_with_email = 
         User::validate_user_new(pool, &query_string, &user_payload.email)
@@ -248,6 +259,7 @@ pub async fn log_in(
 
 
     if !verify(user_payload.password, &user_with_email.password).unwrap() {
+        info!("Invalid password for {:?}", user_payload.email);
         return Err(StudyBuddyError::WrongEmailOrPassword);
     }
 
@@ -268,6 +280,7 @@ pub async fn log_in(
     let mut session_cookie = Cookie::new("session_id",new_session_id.to_string());
 
     if user_payload.wants_to_be_remembered {
+        info!("Added 365 day duration on log in cookie");
         session_cookie.set_expires(OffsetDateTime::now_utc() + Duration::days(365));
     }
 
@@ -287,7 +300,6 @@ pub async fn log_out(
 ) -> Result<Response, StudyBuddyError> {
 
     //Unique id in this case is the session id to invalidate in the database
-    
     {
         let pool = &app_state.lock().await.pool;
 
@@ -303,6 +315,7 @@ pub async fn log_out(
     }
 
     cookies.remove(Cookie::named("session_id"));
+    info!("Logged out user with id {}", ctx.user_id);
 
     Ok((
         StatusCode::OK,
@@ -339,6 +352,8 @@ pub async fn create_document(
         .await?;
     }
 
+    info!("Created document with title {} and id {}", new_document.title, new_document.document_id);
+
     Ok(Json(SentDocument {
         unique_id: new_document.document_id,
         text: new_document.title,
@@ -357,6 +372,7 @@ pub async fn fetch_posts(
 ) -> Result<Json<Vec<DatabaseDocumentRecords>>, StudyBuddyError> {
 
     let pool = &app_state.lock().await.pool;
+    info!("Fetching posts for user {}", ctx.user_id);
 
     let user_posts = sqlx::query_as::<_,DatabaseDocumentRecords>(
         "SELECT title, document_id
@@ -382,6 +398,7 @@ pub async fn save_document(
 ) -> Result<Response, StudyBuddyError> {
 
     let pool = &app_state.lock().await.pool;
+    info!("Saving document with id {}", user_save_request.document_id);
 
     sqlx::query!(
         "UPDATE documents
@@ -430,4 +447,9 @@ pub async fn fetch_post_content(
     } else {
         Err(StudyBuddyError::DocumentNotFound)
     }
+}
+
+pub async fn get_recovery_page() -> Html<String>{
+    info!("Serving '/recovery'");
+    Html(read_to_string("static/html/recovery.html").await.unwrap())
 }

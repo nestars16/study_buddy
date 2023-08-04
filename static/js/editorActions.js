@@ -315,3 +315,10 @@ export const disableLoadingScreen = () => {
     overlay.classList.add("hidden");
     overlay.classList.remove("loading-overlay");
 }
+
+export const enableUserModalShake = () => {
+
+    const userModal = document.getElementById("user-modal");    
+    userModal.classList.add("error-shake-modal");
+
+}

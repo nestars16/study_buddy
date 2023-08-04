@@ -1,4 +1,4 @@
-import { enableButtonAndRemoveSpinner, closeDocumentCreationModal} from "./editorActions.js";
+import { enableButtonAndRemoveSpinner, closeDocumentCreationModal, enableUserModalShake} from "./editorActions.js";
 
 
 export const downloadMarkdownToPDF = async (html_body,css_stylings) => {
@@ -50,7 +50,12 @@ export const getCookiesObject = () => {
 
 export const checkForLogInUser = () => {
 
+
     const cookiesObject = getCookiesObject(); 
+
+    document.getElementById("log-out").classList.add("hidden");
+    document.getElementById("add-document").classList.add("hidden");
+    document.getElementById("all-documents").classList.add("hidden");
 
     if (cookiesObject.session_id) {
         document.getElementById("sign-up").classList.add("hidden")
@@ -77,8 +82,7 @@ export const sendLogIn = async (username, password, wantsToBeRemembered) => {
 
         if (response.status != 200) {
             const responseText = await response.text();
-
-
+            enableUserModalShake();
             modalError.textContent = responseText;
             return;
         }
@@ -99,12 +103,14 @@ export const createUser = async (username,password,confirmPassword) => {
     if(!password.match(passwordRegex)) {
         modalError.textContent = "Password must contain minimum eight characters\nat least one letter and one number";
         enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
+        enableUserModalShake();
         return;
     }
 
     if(password !== confirmPassword) {
         modalError.textContent = "Passwords dont match";     
         enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
+        enableUserModalShake();
         return;
     }
 
@@ -121,8 +127,7 @@ export const createUser = async (username,password,confirmPassword) => {
 
         if(response.status != 201) {
             const responseText = await response.text();
-
-
+            enableUserModalShake();
             modalError.textContent = responseText;
             return;
         }
@@ -151,6 +156,7 @@ export const submitButtonAction = async () => {
                     if(fieldsArentFilled) {
                         errorMessage.textContent = "All fields are required";
                         enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
+                        enableUserModalShake();
                         return;
                     }
                     await sendLogIn(email,password,wantsToBeRemembered); 
@@ -161,6 +167,7 @@ export const submitButtonAction = async () => {
 
                     if(fieldsArentFilled || !(confirmPassword)) {
                         errorMessage.textContent = "All fields are required";
+                        enableUserModalShake();
                         enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
                         return;
                     }
