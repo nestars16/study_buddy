@@ -27,6 +27,11 @@ use tower_cookies::{
     Cookie, Cookies};
 use check_if_email_exists::{check_email, CheckEmailInput,Reachable};
 use tracing::info;
+use lettre::{
+    message::{header::ContentType, Mailbox},
+    transport::smtp::authentication::Credentials,
+    Message, SmtpTransport, Transport, Address, 
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SentUser {
@@ -452,4 +457,53 @@ pub async fn fetch_post_content(
 pub async fn get_recovery_page() -> Html<String>{
     info!("Serving '/recovery'");
     Html(read_to_string("static/html/recovery.html").await.unwrap())
+}
+
+#[derive(Serialize)]
+pub struct Email{
+    email : String
+}
+
+impl Email {
+    fn new(email : &str) -> Self{
+        Email{ email : email.to_string() }
+    }
+
+    fn to_mailbox(self) -> Result<Mailbox, StudyBuddyError> {
+
+        let mut email_iterator = self.email.split('@');
+
+        let (Some(name), Some(email)) = (email_iterator.next(), email_iterator.next()) else {
+            return Err(StudyBuddyError::InvalidEmailAddress)
+        };
+
+        let address = Address::new(name, email).map_err(|_| StudyBuddyError::InvalidEmailAddress)?;
+
+        Ok(Mailbox::new(None, address))  
+    }
+}
+
+pub async fn send_password_recovery_email(Json(user_email): Json<Email>) -> Result<Response, StudyBuddyError>{
+
+    let recovery_email_address = std::env::var("EMAIL").expect("EMAIL should be set");
+
+    let message = Message::builder()
+        .from(Email::new(&recovery_email_address).to_mailbox()?)
+        .to(user_email.to_mailbox()?)
+        .subject("StudyBuddy recovery email")
+        .header(ContentType::TEXT_HTML)
+        .body(include_str!("../static/html/email_content.html").to_string())
+        .expect("All email fields should be valid");
+
+    let credentials = Credentials::new(recovery_email_address, std::env::var("EMAIL_APP_PASSWORD").expect("EMAIL_APP_PASSWORD should be set"));    
+
+    let mailer = SmtpTransport::relay("smtp.gmail.com")
+    .unwrap()
+    .credentials(credentials)
+    .build();
+
+    match mailer.send(&message) {
+        Ok(_) => Ok((StatusCode::OK, "Email sent succesfully".to_string()).into_response()),
+        Err(err) => Ok((StatusCode::BAD_REQUEST, format!("Email failed to send {:?}", err)).into_response())
+    }
 }

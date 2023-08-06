@@ -18,7 +18,8 @@ use tracing::{info, Level};
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
 //TODO add text search to document_titles
-//TODO Password recovery endpoint and screen
+//TODO Password recovery endpoint
+//TODO remove all parts where input text fields remember previous input
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
