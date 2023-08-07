@@ -30,7 +30,7 @@ use tracing::info;
 use lettre::{
     message::{header::ContentType, Mailbox},
     transport::smtp::authentication::Credentials,
-    Message, SmtpTransport, Transport, Address, 
+    Message, AsyncSmtpTransport, AsyncTransport, Address, 
 };
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -90,7 +90,7 @@ impl User {
         }
     }
 
-    async fn validate_user_new<'a ,T>(
+    async fn validate_user<'a ,T>(
         pool: &PgPool,
         query_string : &'a str,
         equal: T
@@ -152,7 +152,7 @@ pub async fn mw_user_ctx_resolver<B>(
                 let query_string = User::create_validate_user_string("session_id");
                 let session_id = uuid::Uuid::from_str(&session_id).map_err(|_|StudyBuddySessionError::InvalidUserSession)?;
                 let pool = &app_state.lock().await.pool;
-                User::validate_user_new::<uuid::Uuid>(
+                User::validate_user::<uuid::Uuid>(
                     pool,
                     &query_string,
                     session_id
@@ -213,7 +213,7 @@ pub async fn create_user(
     let pool = &app_state.lock().await.pool;
 
     let query_string = User::create_validate_user_string("email");
-    if User::validate_user_new(pool,&query_string,&user_payload.email).await?.is_some() {
+    if User::validate_user(pool,&query_string,&user_payload.email).await?.is_some() {
         info!("email address already in use: {}", user_payload.email);
         return Err(StudyBuddyError::EmailAlreadyInUse)
     }
@@ -258,10 +258,9 @@ pub async fn log_in(
     let pool = &app_state.lock().await.pool;
     let query_string = User::create_validate_user_string("email");
     let mut user_with_email = 
-        User::validate_user_new(pool, &query_string, &user_payload.email)
+        User::validate_user(pool, &query_string, &user_payload.email)
         .await?
         .ok_or_else(|| StudyBuddyError::NoMatchingUserRecord)?;
-
 
     if !verify(user_payload.password, &user_with_email.password).unwrap() {
         info!("Invalid password for {:?}", user_payload.email);
@@ -459,7 +458,7 @@ pub async fn get_recovery_page() -> Html<String>{
     Html(read_to_string("static/html/recovery.html").await.unwrap())
 }
 
-#[derive(Serialize)]
+#[derive(Deserialize,Clone)]
 pub struct Email{
     email : String
 }
@@ -483,8 +482,10 @@ impl Email {
     }
 }
 
-pub async fn send_password_recovery_email(Json(user_email): Json<Email>) -> Result<Response, StudyBuddyError>{
+pub async fn send_password_recovery_email(State(app_state): State<Arc<Mutex<AppState>>>, Json(user_email): Json<Email>) -> Result<Response, StudyBuddyError>{
 
+    let pool = &app_state.lock().await.pool;              
+    let uuid = create_temp_password_in_database(pool, &user_email.email).await?;
     let recovery_email_address = std::env::var("EMAIL").expect("EMAIL should be set");
 
     let message = Message::builder()
@@ -492,18 +493,96 @@ pub async fn send_password_recovery_email(Json(user_email): Json<Email>) -> Resu
         .to(user_email.to_mailbox()?)
         .subject("StudyBuddy recovery email")
         .header(ContentType::TEXT_HTML)
-        .body(include_str!("../static/html/email_content.html").to_string())
+        .body(include_str!("../static/html/email_content.html").to_string().replace("$recovery_code$", &uuid.to_string()))
         .expect("All email fields should be valid");
 
     let credentials = Credentials::new(recovery_email_address, std::env::var("EMAIL_APP_PASSWORD").expect("EMAIL_APP_PASSWORD should be set"));    
 
-    let mailer = SmtpTransport::relay("smtp.gmail.com")
+    let mailer = AsyncSmtpTransport::<lettre::Tokio1Executor>::relay("smtp.gmail.com")
     .unwrap()
     .credentials(credentials)
     .build();
 
-    match mailer.send(&message) {
-        Ok(_) => Ok((StatusCode::OK, "Email sent succesfully".to_string()).into_response()),
+    match mailer.send(message).await {
+        Ok(_) => {
+            Ok((StatusCode::OK, "Email sent succesfully".to_string()).into_response())
+        },
         Err(err) => Ok((StatusCode::BAD_REQUEST, format!("Email failed to send {:?}", err)).into_response())
     }
+}
+
+pub async fn create_temp_password_in_database(pool : &PgPool, sender:  &String) -> Result<uuid::Uuid, StudyBuddyError>{
+    
+    let query_string = User::create_validate_user_string("email");
+
+    let Some(user_email) = User::validate_user(pool,&query_string,&sender).await? else {
+        return Err(StudyBuddyError::NoMatchingUserRecord);
+    };
+
+    let user_email = user_email.email;
+
+    let temp_password = uuid::Uuid::new_v4();
+
+    sqlx::query!(
+        "INSERT INTO temporary
+        VALUES ($1, $2)",
+        temp_password,
+        user_email
+        ).execute(pool).await?;
+
+    Ok(temp_password)
+}
+
+#[derive(Deserialize)] 
+pub struct PasswordRecoveryRequest{
+    code : uuid::Uuid,
+    password: String
+}
+
+#[derive(FromRow)]
+pub struct TemporaryCodeRow {
+    corresponding_email : String,
+}
+
+pub async fn try_recovery_code(State(app_state) : State<Arc<Mutex<AppState>>>, Json(req) : Json<PasswordRecoveryRequest>) -> Result<Response,StudyBuddyError> {
+    
+
+    let pool = &app_state.lock().await.pool;
+    let email = sqlx::query_as::<_, TemporaryCodeRow>(
+        "SELECT corresponding_email
+        FROM temporary
+        WHERE temp_password = $1"
+        ).bind(&req.code)
+        .fetch_optional(pool)
+        .await?;
+
+    let Some(valid_email) = email else {
+        return Err(StudyBuddyError::InvalidRecoveryCode);
+    };
+
+    let valid_email = valid_email.corresponding_email;
+
+    let hashed = hash(req.password, DEFAULT_COST).expect("All passwords should hash");
+
+    sqlx::query!(
+        "
+        UPDATE users
+        SET password = $1
+        WHERE email = $2
+        ",
+        hashed,
+        valid_email
+        ).execute(pool)
+        .await?;
+
+    sqlx::query!(
+        "
+        DELETE FROM temporary
+        WHERE temp_password = $1 
+        ",
+        req.code
+        ).execute(pool)
+        .await?;
+
+    Ok((StatusCode::OK, "Successfully reset password").into_response())
 }

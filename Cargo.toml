@@ -13,7 +13,7 @@ bcrypt = "0.15.0"
 check-if-email-exists = "0.9.0"
 dotenv = "0.15.0"
 futures = "0.3.28"
-lettre = "0.10.4"
+lettre = { version = "0.10.4", features = ["tokio1", "tokio1-native-tls"] }
 markdown = "1.0.0-alpha.9"
 open = "4.1.0"
 postgrest = "1.5.1"

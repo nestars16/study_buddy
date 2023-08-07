@@ -316,9 +316,8 @@ export const disableLoadingScreen = () => {
     overlay.classList.remove("loading-overlay");
 }
 
-export const enableUserModalShake = () => {
+export const enableUserModalShake = (modal) => {
 
-    const userModal = document.getElementById("user-modal");    
-    userModal.classList.add("error-shake-modal");
+    modal.classList.add("error-shake-modal");
 
 }

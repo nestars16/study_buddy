@@ -17,9 +17,12 @@ use tower_http::services::ServeDir;
 use tracing::{info, Level};
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
-//TODO add text search to document_titles
+
 //TODO Password recovery endpoint
+//TODO add text search to document_titles
 //TODO remove all parts where input text fields remember previous input
+//TODO 404 fallback
+//TODO syntax highlighting for code blocks
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
@@ -58,6 +61,8 @@ async fn main() -> std::io::Result<()> {
         .route("/create_user", post(users::create_user))
         .route("/log_in", post(users::log_in))
         .route("/recovery", get(users::get_recovery_page))
+        .route("/send_recovery", post(users::send_password_recovery_email))
+        .route("/try_recovery_code", post(users::try_recovery_code))
         .merge(auth_needed_routes)
         .nest_service("/static", ServeDir::new("static"))
         .layer(

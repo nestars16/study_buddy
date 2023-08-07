@@ -36,6 +36,7 @@ impl From<StudyBuddySessionError> for StudyBuddyError {
 pub enum StudyBuddyError {
     SessionError(StudyBuddySessionError),
     NoMatchingUserRecord,
+    InvalidRecoveryCode,
     EmailAlreadyInUse,
     IncompleteRequest,
     WrongEmailOrPassword,
@@ -94,6 +95,9 @@ impl IntoResponse for StudyBuddyError {
             },
             StudyBuddyError::InvalidEmailAddress => {
                 (StatusCode::BAD_REQUEST, "Invalid email address").into_response()
+            },
+            StudyBuddyError::InvalidRecoveryCode => {
+                (StatusCode::UNAUTHORIZED, "Invalid temporary password").into_response()
             }
         }
     }

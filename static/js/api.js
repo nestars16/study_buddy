@@ -82,7 +82,7 @@ export const sendLogIn = async (username, password, wantsToBeRemembered) => {
 
         if (response.status != 200) {
             const responseText = await response.text();
-            enableUserModalShake();
+            enableUserModalShake(document.getElementById("user-modal"));
             modalError.textContent = responseText;
             return;
         }
@@ -98,19 +98,19 @@ export const createUser = async (username,password,confirmPassword) => {
 
     const modalError = document.getElementById("modal-error");  
 
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    const passwordRegex = /(?=.*[A-Za-z])(?=.*\d).{8,}$/;
 
     if(!password.match(passwordRegex)) {
         modalError.textContent = "Password must contain minimum eight characters\nat least one letter and one number";
         enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
-        enableUserModalShake();
+        enableUserModalShake(document.getElementById("user-modal"));
         return;
     }
 
     if(password !== confirmPassword) {
         modalError.textContent = "Passwords dont match";     
         enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
-        enableUserModalShake();
+        enableUserModalShake(document.getElementById("user-modal"));
         return;
     }
 
@@ -127,7 +127,7 @@ export const createUser = async (username,password,confirmPassword) => {
 
         if(response.status != 201) {
             const responseText = await response.text();
-            enableUserModalShake();
+            enableUserModalShake(document.getElementById("user-modal"));
             modalError.textContent = responseText;
             return;
         }
@@ -156,7 +156,7 @@ export const submitButtonAction = async () => {
                     if(fieldsArentFilled) {
                         errorMessage.textContent = "All fields are required";
                         enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
-                        enableUserModalShake();
+                        enableUserModalShake(document.getElementById("user-modal"));
                         return;
                     }
                     await sendLogIn(email,password,wantsToBeRemembered); 
@@ -167,7 +167,7 @@ export const submitButtonAction = async () => {
 
                     if(fieldsArentFilled || !(confirmPassword)) {
                         errorMessage.textContent = "All fields are required";
-                        enableUserModalShake();
+                        enableUserModalShake(document.getElementById("user-modal"));
                         enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
                         return;
                     }
