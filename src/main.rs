@@ -18,6 +18,7 @@ use tracing::{info, Level, log::warn};
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
 
+//TODO filter error handling
 //TODO add text search to document_titles
 //TODO syntax highlighting for code blocks
 

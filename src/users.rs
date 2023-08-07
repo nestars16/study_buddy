@@ -484,9 +484,10 @@ impl Email {
 
 pub async fn send_password_recovery_email(State(app_state): State<Arc<Mutex<AppState>>>, Json(user_email): Json<Email>) -> Result<Response, StudyBuddyError>{
 
-    let pool = &app_state.lock().await.pool;              
-    let uuid = create_temp_password_in_database(pool, &user_email.email).await?;
+    //let pool = &app_state.lock().await.pool;              
+    //let uuid = create_temp_password_in_database(pool, &user_email.email).await?;
     let recovery_email_address = std::env::var("EMAIL").expect("EMAIL should be set");
+    let uuid = uuid::Uuid::new_v4();
 
     let message = Message::builder()
         .from(Email::new(&recovery_email_address).to_mailbox()?)
