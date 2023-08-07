@@ -14,7 +14,7 @@
         <section id="email-submission" class="modal dark-mode-modal recovery">
             <h2 class="user-modal-title">Password recovery    🗝️</h2>
             <p>Enter the email linked to your account so we may send a recovery email</p>
-            <input id="text-field" class="dark-mode-text-field" type="email">
+            <input autocomplete="off" id="text-field" class="dark-mode-text-field" type="email">
             <button id="submit-button" class="submit-button action-button dark-mode-button">Submit</button>
             <a href="#" id="recovery-code" class="forgotten-password-link"><span class="greyed-out-text forgot-password">I have a recovery code</span></a> 
         </section>
@@ -27,9 +27,9 @@
         <section id="recovery-modal" class="modal dark-mode-modal recovery hidden">
             <h2 class="user-modal-title">Password recovery    🗝️</h2>
             <p style="text-align: center;">Please enter the code sent to your email, and your new desired password</p>
-            <input id="code-field" class="dark-mode-text-field" type="text" placeholder="Code">
-            <input id="password" class="dark-mode-text-field" type="password" placeholder="Password">
-            <input id="password-confirmation" class="dark-mode-text-field" type="password" placeholder="Confirm password"> 
+            <input autocomplete="off" id="code-field" class="dark-mode-text-field" type="text" placeholder="Code">
+            <input autocomplete="off" id="password" class="dark-mode-text-field" type="password" placeholder="Password">
+            <input autocomplete="off" id="password-confirmation" class="dark-mode-text-field" type="password" placeholder="Confirm password"> 
             <button id="recovery-submit-button" class="submit-button action-button dark-mode-button">
                 <span>Submit</span>
             </button>

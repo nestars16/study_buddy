@@ -14,14 +14,11 @@ use study_buddy::users;
 use tokio::sync::Mutex;
 use tower_cookies::CookieManagerLayer;
 use tower_http::services::ServeDir;
-use tracing::{info, Level};
+use tracing::{info, Level, log::warn};
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
 
-//TODO Password recovery endpoint
 //TODO add text search to document_titles
-//TODO remove all parts where input text fields remember previous input
-//TODO 404 fallback
 //TODO syntax highlighting for code blocks
 
 #[tokio::main]
@@ -79,20 +76,31 @@ async fn main() -> std::io::Result<()> {
                 .layer(CookieManagerLayer::new())
                 ,
         )
-        .with_state(app_state);
+        .with_state(app_state)
+        .fallback(study_buddy::server::no_match_handler);
 
-    let server = Server::bind(
-        &"0.0.0.0:0"
+    let quit_sig = async {
+         _ = tokio::signal::ctrl_c().await;
+        warn!("Initiating graceful shutdown");
+    };
+
+    let address = 
+        &"0.0.0.0:8080"
             .parse()
-            .expect("Address is guaranteed to be valid"),
-    )
-    .serve(router.into_make_service());
+            .expect("Address is guaranteed to be valid");
 
-    info!("Listening on: {:?}", server.local_addr());
+    info!("Listening on: {:?}", address);
 
-    let address_string = format!("http://{}", server.local_addr());
+    let address_string = format!("http://{}", address);
 
     open::that(address_string)?;
+
+    let server = Server::bind(
+        address
+    )
+    .serve(router.into_make_service())
+    .with_graceful_shutdown(quit_sig);
+
 
     server.await.unwrap();
 

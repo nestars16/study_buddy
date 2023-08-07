@@ -153,3 +153,8 @@ pub async fn download_current_markdown(
 
     Ok(Json(api_response))
 }
+
+pub async fn no_match_handler() -> Html<String> {
+    Html(tokio::fs::read_to_string("static/html/not_found.html").await.unwrap())
+
+}

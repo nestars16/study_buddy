@@ -534,3 +534,7 @@ light-user-modal-title {
 .recovery {
     max-width: 50%;
 }
+
+.to-home-page {
+    margin: auto;
+}

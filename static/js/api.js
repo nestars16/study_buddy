@@ -83,6 +83,7 @@ export const sendLogIn = async (username, password, wantsToBeRemembered) => {
         if (response.status != 200) {
             const responseText = await response.text();
             enableUserModalShake(document.getElementById("user-modal"));
+            enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
             modalError.textContent = responseText;
             return;
         }
@@ -114,7 +115,6 @@ export const createUser = async (username,password,confirmPassword) => {
         return;
     }
 
-
     try {
         const response = await fetch("/create_user", {
             method: "POST",
@@ -127,6 +127,7 @@ export const createUser = async (username,password,confirmPassword) => {
 
         if(response.status != 201) {
             const responseText = await response.text();
+            enableButtonAndRemoveSpinner(document.getElementById("submit-button"));
             enableUserModalShake(document.getElementById("user-modal"));
             modalError.textContent = responseText;
             return;
@@ -195,11 +196,13 @@ export const logOut = async () => {
 
         if (response.status  != 200) {
             open_external_error_modal(response, await response.text()); 
+            enableButtonAndRemoveSpinner(document.getElementById("log-out"));
             return;
         }
 
         location.reload();
     } catch(error) {
+        enableButtonAndRemoveSpinner(document.getElementById("log-out"));
         open_external_error_modal(null, error);
     }
 }

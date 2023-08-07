@@ -60,7 +60,7 @@
                     <span></span>
                 </div>
                 <div class="plain">
-                    <textarea class="editor dark-mode-input" id="editor" data-el="input">
+                    <textarea autocomplete="off"class="editor dark-mode-input" id="editor" data-el="input">
                     </textarea>
                     <pre aria-hidden="true" class="plain__highlights"><code id="highlight" data-el="highlight" class="markdown"></code></pre>
                 </div>
@@ -69,9 +69,9 @@
                 <button id="user-modal-close" class="button-close action-button dark-mode-button">⨉</button>
                 <h2 id="user-modal-title" class="user-modal-title dark-user-modal-title"></h2>
                 <form id="user-form">
-                    <input name="email" id="email-field" type="email" placeholder="Email" form="user-form" class="dark-mode-text-field" required>
-                    <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" class="dark-mode-text-field" required>
-                    <input name="password-confirmation" id="password-confirmation-field" class="hidden dark-mode-text-field" type="password" placeholder="Confirm Password" form="user-form" required>
+                    <input name="email" id="email-field" type="email" placeholder="Email" form="user-form" class="dark-mode-text-field" required autocomplete="off">
+                    <input name="password" id="password-field"type="password" placeholder="Password" form="user-form" class="dark-mode-text-field" required autocomplete="off">
+                    <input name="password-confirmation" id="password-confirmation-field" class="hidden dark-mode-text-field" type="password" placeholder="Confirm Password" form="user-form" required autocomplete="off">
                     <button id="submit-button" class="action-button submit-button dark-mode-button">
                         <span>Submit</span>
                     </button>
@@ -95,7 +95,7 @@
             <section id="user-document-title-modal" class="modal title-modal dark-mode-modal hidden">
                 <button id="user-document-title-close" class="button-close action-button dark-mode-button">⨉</button>
                 <form id="document-title-form">
-                    <input id="document-title-field" type="text" class="dark-mode-text-field" placeholder="Enter the title of your document" required>
+                    <input  autocomplete="off" id="document-title-field" type="text" class="dark-mode-text-field" placeholder="Enter the title of your document" required>
                     <button id="document-title-submit" class="action-button submit-button dark-mode-button">
                         <span>Submit</span>
                     </button>

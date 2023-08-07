@@ -130,7 +130,6 @@ document.addEventListener("DOMContentLoaded", () => {
     highlight(editor,highlight);
     initialSetup();
     checkForLogInUser();
-    editor.value = "";
 
     setInterval(() => {
 

@@ -51,7 +51,6 @@ const tryRecoveryCode = async (recoveryCode, password, password_confirm) => {
     }
 
     try {
-
         const serverResponse = await fetch("/try_recovery_code", {
             method : "POST",
             headers : {
@@ -65,12 +64,14 @@ const tryRecoveryCode = async (recoveryCode, password, password_confirm) => {
 
         if (serverResponse.status != 200) {
             modalError.textContent = await serverResponse.text(); 
+            enableButtonAndRemoveSpinner(document.getElementById("recovery-submit-button"));
+            enableUserModalShake(document.getElementById("recovery-modal"));
         }
-
-        
     }
     catch(error) {
-        console.log(error);
+        modalError.textContent = "There was an error trying to reset your password try again in a few moments"; 
+        enableButtonAndRemoveSpinner(document.getElementById("recovery-submit-button"));
+        enableUserModalShake(document.getElementById("recovery-modal"));
     }
 }
 
