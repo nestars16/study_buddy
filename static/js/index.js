@@ -16,9 +16,6 @@ const editor = document.getElementById("editor");
 const display = document.getElementById("markdown-display");  
 let currentDocuments = [];
 let refreshMathTexCounter = 10;
-let currentDocTimeoutId = {
-    current_id : null
-};
 
     const initialSetup = async () => {
 
@@ -53,7 +50,7 @@ let currentDocTimeoutId = {
             enableLoadingScreen();
             currentDocuments = await fetchUserDocuments();
             disableLoadingScreen();
-            showUserPosts(currentDocuments,currentMode,fetchCurrentDocumentContent,currentDocTimeoutId);
+            showUserPosts(currentDocuments,currentMode,fetchCurrentDocumentContent);
         }
 
         addButton.onclick = openDocumentTitleModal; 

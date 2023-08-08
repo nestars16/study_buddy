@@ -7,7 +7,6 @@ use axum::{
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
-use tokio::fs::read_to_string;
 use tracing::info;
 
 pub struct AppState {
@@ -26,10 +25,11 @@ impl AppState {
     }
 }
 
-pub async fn get_root() -> Html<String> {
+pub async fn get_root() -> Html<&'static str> {
     info!("Serving '/'");
-    Html(read_to_string("static/html/index.html").await.unwrap())
+    Html(include_str!("../static/html/index.html"))
 }
+
 
 pub async fn refresh_file(ws: WebSocketUpgrade) -> Response {
     info!("Connecting to refresh socket");
@@ -154,7 +154,7 @@ pub async fn download_current_markdown(
     Ok(Json(api_response))
 }
 
-pub async fn no_match_handler() -> Html<String> {
-    Html(tokio::fs::read_to_string("static/html/not_found.html").await.unwrap())
+pub async fn no_match_handler() -> Html<&'static str> {
+    Html(include_str!("../static/html/not_found.html"))
 
 }

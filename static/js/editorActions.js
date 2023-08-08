@@ -219,11 +219,13 @@ export const toggleMode = () => {
     return currentMode;
 }
 
-const changeToSelectedDocument = async (event, fetchFunction,documentArray, globalCurrentTimeoutId) => {
+let globalTimeoutId = null;
 
-    if(globalCurrentTimeoutId.current_id) {
+const changeToSelectedDocument = async (event, fetchFunction,documentArray) => {
+
+    if(globalTimeoutId){
         debugger;
-        clearInterval(globalCurrentTimeoutId);
+        clearInterval(globalTimeoutId);
     }
 
     const arrayId = event.target.id;
@@ -235,13 +237,14 @@ const changeToSelectedDocument = async (event, fetchFunction,documentArray, glob
     document.getElementById("editor").dispatchEvent(new Event('input', { bubbles: true }));
     document.getElementById("document-close-button").click();
 
-    globalCurrentTimeoutId.current_id = setInterval(() => {
-        debugger;
+    globalTimeoutId = setInterval(() => {
         savePost(document_id, document.getElementById("editor").value)
     }, 60000)
+
+    debugger;
 }
 
-export const showUserPosts = (documentArray, currentMode, fetchFunction, globalCurrentTimeoutId) => {
+export const showUserPosts = (documentArray, currentMode, fetchFunction) => {
 
     const documentModal = document.getElementById("document-section");
     documentModal.innerHTML = '';
@@ -263,9 +266,10 @@ export const showUserPosts = (documentArray, currentMode, fetchFunction, globalC
         }
 
         documentAnchor.classList.add(classListName)
+        let newCurrentTimeoutId;
 
         documentAnchor.onclick = (event) => {
-            changeToSelectedDocument(event,fetchFunction,documentArray,globalCurrentTimeoutId);
+            newCurrentTimeoutId = changeToSelectedDocument(event,fetchFunction,documentArray);
         }
 
         documentAnchor.innerText = value.title;
@@ -279,6 +283,8 @@ export const showUserPosts = (documentArray, currentMode, fetchFunction, globalC
     }
     document.getElementById("all-documents-modal").classList.remove("hidden");
     hideMainContentAndShowOverlay();
+
+    return newCurrentTimeoutId;
 }
 
 export const disableButtonAndShowSpinner = (button,mode) => {

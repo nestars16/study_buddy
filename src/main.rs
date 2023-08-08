@@ -17,8 +17,8 @@ use tower_http::services::ServeDir;
 use tracing::{info, Level, log::warn};
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
+//TODO fix bug with saving
 
-//TODO filter error handling
 //TODO add text search to document_titles
 //TODO syntax highlighting for code blocks
 
@@ -92,9 +92,9 @@ async fn main() -> std::io::Result<()> {
 
     info!("Listening on: {:?}", address);
 
-    let address_string = format!("http://{}", address);
+    //let address_string = format!("http://{}", address);
 
-    open::that(address_string)?;
+    //open::that(address_string)?;
 
     let server = Server::bind(
         address

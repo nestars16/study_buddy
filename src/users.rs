@@ -19,9 +19,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPool, FromRow};
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio::{sync::Mutex,
-fs::read_to_string,
-    };
+use tokio::sync::Mutex;
 use tower_cookies::{
     cookie::time::{Duration, OffsetDateTime},
     Cookie, Cookies};
@@ -453,9 +451,9 @@ pub async fn fetch_post_content(
     }
 }
 
-pub async fn get_recovery_page() -> Html<String>{
+pub async fn get_recovery_page() -> Html<&'static str>{
     info!("Serving '/recovery'");
-    Html(read_to_string("static/html/recovery.html").await.unwrap())
+    Html(include_str!("../static/html/recovery.html"))
 }
 
 #[derive(Deserialize,Clone)]
@@ -484,10 +482,9 @@ impl Email {
 
 pub async fn send_password_recovery_email(State(app_state): State<Arc<Mutex<AppState>>>, Json(user_email): Json<Email>) -> Result<Response, StudyBuddyError>{
 
-    //let pool = &app_state.lock().await.pool;              
-    //let uuid = create_temp_password_in_database(pool, &user_email.email).await?;
+    let pool = &app_state.lock().await.pool;              
+    let uuid = create_temp_password_in_database(pool, &user_email.email).await?;
     let recovery_email_address = std::env::var("EMAIL").expect("EMAIL should be set");
-    let uuid = uuid::Uuid::new_v4();
 
     let message = Message::builder()
         .from(Email::new(&recovery_email_address).to_mailbox()?)
