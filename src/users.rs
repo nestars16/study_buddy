@@ -584,3 +584,20 @@ pub async fn try_recovery_code(State(app_state) : State<Arc<Mutex<AppState>>>, J
 
     Ok((StatusCode::OK, "Successfully reset password").into_response())
 }
+
+
+pub async fn delete_document(_ctx : UserCtx, State(app_state) : State<Arc<Mutex<AppState>>> , Query(document_id): Query<DocumentId>) -> Result<Response, StudyBuddyError> {
+
+    let Ok(id) = uuid::Uuid::from_str(&document_id.document_id) else {
+        return Err(StudyBuddyError::DocumentNotFound);
+    };
+
+    sqlx::query!(
+        "DELETE FROM documents
+        WHERE document_id = $1",
+        id
+        ).execute(&app_state.lock().await.pool)
+        .await?;
+
+    Ok((StatusCode::OK, "Successfully deleted document").into_response())
+}

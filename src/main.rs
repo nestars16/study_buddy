@@ -3,7 +3,7 @@ use axum::{
     error_handling::HandleErrorLayer,
     http::StatusCode,
     middleware,
-    routing::{get, post, put},
+    routing::{get, post, put,delete},
     BoxError, Router, Server,
 };
 use std::{sync::Arc, time::Duration};
@@ -17,7 +17,7 @@ use tower_http::services::ServeDir;
 use tracing::{info, Level, log::warn};
 use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
 
-//TODO fix bug with saving
+//TODO add delete functionality for documents
 
 //TODO add text search to document_titles
 //TODO syntax highlighting for code blocks
@@ -44,6 +44,7 @@ async fn main() -> std::io::Result<()> {
         .route("/save", put(users::save_document))
         .route("/fetch_documents", get(users::fetch_posts))
         .route("/fetch_content", get(users::fetch_post_content))
+        .route("/delete_document", delete(users::delete_document))
         .layer(middleware::from_fn_with_state(
             app_state.clone(),
             users::mw_user_ctx_resolver,

@@ -266,10 +266,9 @@ export const showUserPosts = (documentArray, currentMode, fetchFunction) => {
         }
 
         documentAnchor.classList.add(classListName)
-        let newCurrentTimeoutId;
 
         documentAnchor.onclick = (event) => {
-            newCurrentTimeoutId = changeToSelectedDocument(event,fetchFunction,documentArray);
+             changeToSelectedDocument(event,fetchFunction,documentArray);
         }
 
         documentAnchor.innerText = value.title;
