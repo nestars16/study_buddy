@@ -1,4 +1,4 @@
-import { savePost } from "./api.js";
+import { savePost, deleteDocument} from "./api.js";
 
 
 export const highlight = (editor, highlightEl) => {
@@ -244,13 +244,24 @@ const changeToSelectedDocument = async (event, fetchFunction,documentArray) => {
     debugger;
 }
 
+const deleteSelectedDocument = async(event, deleteFunction, documentArray) => {
+    const arrayId = event.target.parentElement.id;
+    const {document_id} = documentArray[arrayId];
+    await deleteFunction(document_id);
+}
+
 export const showUserPosts = (documentArray, currentMode, fetchFunction) => {
 
     const documentModal = document.getElementById("document-section");
     documentModal.innerHTML = '';
 
+
     for(const [index, value] of documentArray.entries()) {
+
         const documentAnchor = document.createElement("a");
+        const documentAnchorDelete = document.createElement("button");
+        documentAnchorDelete.textContent = "🗑️";
+        documentAnchorDelete.classList.add("button-delete");
         documentAnchor.href = "#";
         documentAnchor.id = index;
 
@@ -271,7 +282,14 @@ export const showUserPosts = (documentArray, currentMode, fetchFunction) => {
              changeToSelectedDocument(event,fetchFunction,documentArray);
         }
 
+        documentAnchorDelete.onclick = (event) => {
+            deleteSelectedDocument(event,deleteDocument, documentArray); 
+            closeAllDocumentsModal();
+        }
+
         documentAnchor.innerText = value.title;
+        documentAnchor.appendChild(documentAnchorDelete);
+
     
         documentModal.appendChild(documentAnchor);
 
@@ -281,9 +299,11 @@ export const showUserPosts = (documentArray, currentMode, fetchFunction) => {
 
     }
     document.getElementById("all-documents-modal").classList.remove("hidden");
+    if(documentArray.length === 0) {
+        documentModal.innerText = "You have no documents, try creating some with the plus icon 🤓";
+    }
     hideMainContentAndShowOverlay();
 
-    return newCurrentTimeoutId;
 }
 
 export const disableButtonAndShowSpinner = (button,mode) => {

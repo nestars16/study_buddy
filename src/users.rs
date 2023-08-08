@@ -592,12 +592,16 @@ pub async fn delete_document(_ctx : UserCtx, State(app_state) : State<Arc<Mutex<
         return Err(StudyBuddyError::DocumentNotFound);
     };
 
+    info!("Attempting to delete document {}", &id);
+
     sqlx::query!(
         "DELETE FROM documents
         WHERE document_id = $1",
         id
         ).execute(&app_state.lock().await.pool)
         .await?;
+
+    info!("Successfully deleted document {}", &id);
 
     Ok((StatusCode::OK, "Successfully deleted document").into_response())
 }

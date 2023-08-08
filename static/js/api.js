@@ -281,7 +281,7 @@ export const fetchCurrentDocumentContent = async (doc_id) => {
     }
 }
 
-export const savePost = async (document_id, text) => {
+export const savePost = async (documentId, text) => {
     
     try {
         const response = await fetch("/save",  {
@@ -290,7 +290,7 @@ export const savePost = async (document_id, text) => {
             headers : {
                 "Content-Type" : "application/json"
             },
-            body : JSON.stringify({document_id : document_id, text: text})
+            body : JSON.stringify({document_id : documentId, text: text})
         });
 
         if(response.status != 200) {
@@ -302,6 +302,24 @@ export const savePost = async (document_id, text) => {
         open_external_error_modal(null, error);
     }
 
+}
+
+export const deleteDocument = async(documentId) => {
+
+    try {
+        const response = await fetch(`/delete_document?document_id=${documentId}`,  {
+            method : "DELETE",
+            credentials : "include",
+        });
+
+        if(response.status != 200) {
+            open_external_error_modal(response, await response.text());
+            return;
+        }
+
+    }catch(error) {
+        open_external_error_modal(null, error);
+    }
 }
 
  function open_external_error_modal (serverResponse, text) {

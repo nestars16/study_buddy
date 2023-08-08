@@ -538,3 +538,26 @@ light-user-modal-title {
 .to-home-page {
     margin: auto;
 }
+
+.button-delete {
+  max-width : 30px;
+  max-height: 25px;
+  margin-left: 200px;
+  outline: none;
+  border : solid 1px;
+  border-color: #2c3138;
+  background-color:#010409;
+  color : #FAFAFA;
+  border-radius : 5px;
+}
+
+.button-delete:hover {
+    transform: scale(1.25);
+    transition: all 0.2s ease-in-out;
+}
+
+.button-delete:active{
+    transform: scale(0.95);
+    transition: transform 0.1s;
+}
+
