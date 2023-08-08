@@ -93,9 +93,6 @@ async fn main() -> std::io::Result<()> {
 
     info!("Listening on: {:?}", address);
 
-    //let address_string = format!("http://{}", address);
-
-    //open::that(address_string)?;
 
     let server = Server::bind(
         address

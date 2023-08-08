@@ -1,8 +1,9 @@
 # syntax = docker/dockerfile:1.4
 
-FROM ubuntu:22.04
+FROM ubuntu:22.04 AS base
 
 # Install rustup
+FROM base AS builder
 
 RUN set -eux; \
     apt update; \
@@ -38,7 +39,30 @@ RUN --mount=type=cache,target=/root/.rustup \
 		set -eux; \
         rustup default stable; \
 		cargo build --release;\
-        cp target/release/study_buddy .
+        objcopy --compress-debug-sections ./target/release/study_buddy ./study_buddy
 
-# docker run --env-file .env study_buddy
+
+################################################################################
+FROM base AS app
+
+# Install run-time dependencies, remove extra APT files afterwards.
+# This must be done in the same `RUN` command, otherwise it doesn't help
+# to reduce the image size.
+
+SHELL ["/bin/bash", "-c"]
+
+RUN set -eux; \
+		apt update; \
+		apt install -y --no-install-recommends \
+			ca-certificates \
+			; \
+		apt clean autoclean; \
+		apt autoremove --yes; \
+		rm -rf /var/lib/{apt,dpkg,cache,log}/
+
+# Copy app from builder
+WORKDIR /app
+COPY static static
+COPY --from=builder /app/study_buddy .
+
 CMD ["/app/study_buddy"]
