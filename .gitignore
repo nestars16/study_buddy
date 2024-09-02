@@ -1,2 +1,5 @@
 /target
 .env
+justfile
+node_modules
+/static/fonts

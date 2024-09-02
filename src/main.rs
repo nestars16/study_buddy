@@ -1,23 +1,23 @@
-use std::str::FromStr;
 use axum::{
     error_handling::HandleErrorLayer,
     http::StatusCode,
     middleware,
-    routing::{get, post, put,delete},
+    routing::{delete, get, post, put},
     BoxError, Router, Server,
 };
 use std::{sync::Arc, time::Duration};
-use tower::{
-    limit::rate::RateLimitLayer,
-    buffer::BufferLayer, timeout::TimeoutLayer, ServiceBuilder};
 use study_buddy::users;
 use tokio::sync::Mutex;
+use tower::{
+    buffer::BufferLayer, limit::rate::RateLimitLayer, timeout::TimeoutLayer, ServiceBuilder,
+};
 use tower_cookies::CookieManagerLayer;
-use tower_http::services::ServeDir;
-use tracing::{info, Level, log::warn};
-use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::SubscriberInitExt};
-
-//TODO add delete functionality for documents
+use tower_http::{
+    services::{ServeDir, ServeFile},
+    trace::TraceLayer,
+};
+use tracing::{info, log::warn};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 //TODO add text search to document_titles
 //TODO syntax highlighting for code blocks
@@ -26,14 +26,15 @@ use tracing_subscriber::{filter::Targets, layer::SubscriberExt, util::Subscriber
 async fn main() -> std::io::Result<()> {
     dotenv::dotenv().ok();
 
-    let filter = Targets::from_str(std::env::var("RUST_LOG").as_deref().unwrap_or("info"))
-            .expect("RUST_LOG should be a valid tracing filter");
-
-    tracing_subscriber::fmt()
-        .with_max_level(Level::TRACE)
-        .json()
-        .finish()
-        .with(filter)
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
+                // axum logs rejections from built-in extractors with the `axum::rejection`
+                // target, at `TRACE` level. `axum::rejection=trace` enables showing those events
+                "study_buddy=debug,tower_http=debug,axum::rejection=trace,sqlx=info".into()
+            }),
+        )
+        .with(tracing_subscriber::fmt::layer())
         .init();
 
     let app_state = Arc::new(Mutex::new(study_buddy::server::AppState::new().await));
@@ -51,7 +52,7 @@ async fn main() -> std::io::Result<()> {
         ));
 
     let router = Router::new()
-        .route("/", get(study_buddy::server::get_root))
+        .route_service("/", ServeFile::new("static/html/index.html"))
         .route("/refresh", get(study_buddy::server::refresh_file))
         .route(
             "/download",
@@ -59,11 +60,12 @@ async fn main() -> std::io::Result<()> {
         )
         .route("/create_user", post(users::create_user))
         .route("/log_in", post(users::log_in))
-        .route("/recovery", get(users::get_recovery_page))
+        .route_service("/recovery", ServeFile::new("static/html/recovery.html"))
         .route("/send_recovery", post(users::send_password_recovery_email))
         .route("/try_recovery_code", post(users::try_recovery_code))
         .merge(auth_needed_routes)
         .nest_service("/static", ServeDir::new("static"))
+        .layer(TraceLayer::new_for_http())
         .layer(
             ServiceBuilder::new()
                 .layer(HandleErrorLayer::new(|err: BoxError| async move {
@@ -75,31 +77,25 @@ async fn main() -> std::io::Result<()> {
                 .layer(BufferLayer::new(1024))
                 .layer(RateLimitLayer::new(10, Duration::from_secs(1)))
                 .layer(TimeoutLayer::new(Duration::from_secs(60)))
-                .layer(CookieManagerLayer::new())
-                ,
+                .layer(CookieManagerLayer::new()),
         )
         .with_state(app_state)
-        .fallback(study_buddy::server::no_match_handler);
+        .fallback_service(ServeFile::new("static/html/not_found.html"));
 
     let quit_sig = async {
-         _ = tokio::signal::ctrl_c().await;
+        _ = tokio::signal::ctrl_c().await;
         warn!("Initiating graceful shutdown");
     };
 
-    let address = 
-        &"0.0.0.0:8080"
-            .parse()
-            .expect("Address is guaranteed to be valid");
+    let address = &"0.0.0.0:8080"
+        .parse()
+        .expect("Address is guaranteed to be valid");
 
     info!("Listening on: {:?}", address);
 
-
-    let server = Server::bind(
-        address
-    )
-    .serve(router.into_make_service())
-    .with_graceful_shutdown(quit_sig);
-
+    let server = Server::bind(address)
+        .serve(router.into_make_service())
+        .with_graceful_shutdown(quit_sig);
 
     server.await.unwrap();
 

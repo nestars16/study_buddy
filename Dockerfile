@@ -21,17 +21,23 @@ RUN set -eux; \
 
 # Add rustup to path, check that it works
 ENV PATH=${PATH}:/root/.cargo/bin
+
 RUN set -eux; \
 		rustup --version;
 
 ARG DATABASE_URL
-ENV DATABASE_URL=$DATABASE_URL
+ENV DATABASE_URL=${DATABASE_URL}
 
 WORKDIR /app
 COPY src src
 COPY static static
 COPY templates templates 
+
 COPY Cargo.toml Cargo.lock ./
+
+ARG DATABASE_URL
+ENV DATABASE_URL=$DATABASE_URL
+
 RUN --mount=type=cache,target=/root/.rustup \
     --mount=type=cache,target=/root/.cargo/registry \
     --mount=type=cache,target=/root/.cargo/git \
@@ -50,7 +56,6 @@ FROM base AS app
 # to reduce the image size.
 
 SHELL ["/bin/bash", "-c"]
-
 RUN set -eux; \
 		apt update; \
 		apt install -y --no-install-recommends \
@@ -64,5 +69,6 @@ RUN set -eux; \
 WORKDIR /app
 COPY static static
 COPY --from=builder /app/study_buddy .
+
 
 CMD ["/app/study_buddy"]

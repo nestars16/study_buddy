@@ -3,7 +3,7 @@ use axum::{
         ws::{Message, WebSocket},
         WebSocketUpgrade,
     },
-    response::{Html, Json, Response},
+    response::{Json, Response},
 };
 use serde::{Deserialize, Serialize};
 use sqlx::{postgres::PgPoolOptions, PgPool};
@@ -18,18 +18,12 @@ impl AppState {
         AppState {
             pool: PgPoolOptions::new()
                 .max_connections(8)
-                .connect(&std::env::var("SUPA_BASE_POOL_URL").expect("Database URL must be set"))
+                .connect(&std::env::var("DATABASE_URL").expect("DATABASE_URL must be set"))
                 .await
                 .expect("Failure of creation of AppState is reason enough to crash"),
         }
     }
 }
-
-pub async fn get_root() -> Html<&'static str> {
-    info!("Serving '/'");
-    Html(include_str!("../static/html/index.html"))
-}
-
 
 pub async fn refresh_file(ws: WebSocketUpgrade) -> Response {
     info!("Connecting to refresh socket");
@@ -38,7 +32,6 @@ pub async fn refresh_file(ws: WebSocketUpgrade) -> Response {
 
 pub async fn modify_md_file_state(mut socket: WebSocket) {
     while let Some(new_md_file_state) = socket.recv().await {
-
         let new_md_file_state = if let Ok(file_state) = new_md_file_state {
             file_state
         } else {
@@ -46,16 +39,12 @@ pub async fn modify_md_file_state(mut socket: WebSocket) {
         };
 
         if let Message::Text(file_state) = new_md_file_state {
+            let parse_result =
+                tokio::task::spawn_blocking(move || crate::parse_markdown(&file_state))
+                    .await
+                    .expect("Task cant panic");
 
-            let parse_result = tokio::task::spawn_blocking( move || {
-                crate::parse_markdown(&file_state)
-            }).await.expect("Task cant panic");
-
-            if socket
-                .send(Message::Text(parse_result))
-                .await
-                .is_err()
-            {
+            if socket.send(Message::Text(parse_result)).await.is_err() {
                 return;
             }
         }
@@ -138,9 +127,7 @@ pub async fn download_current_markdown(
     headers.insert(reqwest::header::AUTHORIZATION, auth);
 
     //Make POST request
-
     let client = reqwest::Client::new();
-
     let api_response = client
         .post(api_url)
         .headers(headers)
@@ -152,9 +139,4 @@ pub async fn download_current_markdown(
         .await?;
 
     Ok(Json(api_response))
-}
-
-pub async fn no_match_handler() -> Html<&'static str> {
-    Html(include_str!("../static/html/not_found.html"))
-
 }
